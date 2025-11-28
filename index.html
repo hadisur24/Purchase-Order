@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Purchase Order</title>
+    <title>PO GENERATION TOOL</title>
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -18,6 +19,17 @@
             padding: 20px;
             background-color: #f5f7fa;
             color: #333;
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 32px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
         
         .container {
@@ -41,6 +53,11 @@
         
         .file-input {
             margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 400px;
         }
         
         .btn {
@@ -81,6 +98,22 @@
         
         .btn-clear:hover {
             background-color: #e67e22;
+        }
+        
+        .btn-assets {
+            background-color: #9b59b6;
+        }
+        
+        .btn-assets:hover {
+            background-color: #8e44ad;
+        }
+        
+        .btn-pdf-upload {
+            background-color: #16a085;
+        }
+        
+        .btn-pdf-upload:hover {
+            background-color: #1abc9c;
         }
         
         .form-group {
@@ -136,9 +169,19 @@
             width: 100%;
             border: none;
             padding: 5px;
+            font-size: 14px;
         }
         
-        .editable:focus {
+        .editable-text {
+            background-color: #fffde7;
+            cursor: pointer;
+            width: 100%;
+            border: none;
+            padding: 5px;
+            font-size: 14px;
+        }
+        
+        .editable:focus, .editable-text:focus {
             background-color: #fff9c4;
             outline: 2px solid #3498db;
         }
@@ -239,6 +282,7 @@
             justify-content: center;
             gap: 15px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         
         @media print {
@@ -419,17 +463,119 @@
         .print-contact-line2 {
             margin: 0;
         }
+        
+        .upload-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .pdf-preview {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .pdf-preview h4 {
+            margin-top: 0;
+        }
+        
+        .pdf-preview-content {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: white;
+        }
+        
+        .loading-message {
+            color: #3498db;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .filter-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .contact-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .store-person-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .date-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .upload-options {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="page-title no-print">PO GENERATION TOOL</div>
+    
     <div class="container">
         <div class="upload-section no-print">
-            <h3>Upload Excel File</h3>
+            <h3>Upload Excel or PDF File</h3>
             <p>Your Excel should contain columns: Sl No, Vendor Name, Code, Products Name, CPU, PO Qty, Store Name</p>
-            <input type="file" id="fileInput" class="file-input" accept=".xlsx, .xls">
-            <button id="uploadBtn" class="btn">Upload and Process</button>
+            <p>Or upload a previously generated PO PDF to edit CPU and PO Qty values</p>
             
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx, .xls, .pdf">
             
+            <div class="upload-options">
+                <button id="uploadExcelBtn" class="btn">Upload and Process Excel</button>
+                <button id="uploadPdfBtn" class="btn btn-pdf-upload">Upload and Process PDF</button>
+            </div>
+            
+            <div id="uploadStatus" class="status-message" style="display: none;"></div>
+            
+            <div id="pdfPreview" class="pdf-preview">
+                <h4>PDF Preview (Extracted Data)</h4>
+                <div class="loading-message" id="pdfLoadingMessage" style="display: none;">Processing PDF, please wait...</div>
+                <div class="pdf-preview-content" id="pdfPreviewContent">
+                    <!-- PDF extracted data will be shown here -->
+                </div>
+                <button id="confirmPdfDataBtn" class="btn" style="margin-top: 10px;">Use This Data</button>
+            </div>
         </div>
         
         <div id="poForm" class="no-print" style="display: none;">
@@ -478,7 +624,7 @@
                 
                 <div class="form-group">
                     <label for="refNo">Reference No:</label>
-                    <input type="text" id="refNo">
+                    <input type="text" id="refNo" placeholder="Enter reference number">
                 </div>
                 
                 <div class="form-group">
@@ -499,7 +645,7 @@
             <div class="address-section">
                 <div class="form-group">
                     <label for="deliveryAddress">Delivery Address:</label>
-                    <textarea id="deliveryAddress" rows="3"></textarea>
+                    <textarea id="deliveryAddress" rows="3" placeholder="Enter delivery address"></textarea>
                 </div>
             </div>
             
@@ -564,6 +710,7 @@
                 <button id="printBtn" class="btn btn-print">Print PO</button>
                 <button id="pdfBtn" class="btn btn-pdf">Generate PDF</button>
                 <button id="clearBtn" class="btn btn-clear">Clear Data</button>
+                <button id="assetsDownloadBtn" class="btn btn-assets">Assets Download</button>
             </div>
             
             <div class="clear-data-section">
@@ -572,9 +719,10 @@
                 <button id="clearDataBtn" class="btn btn-clear">Clear All Data</button>
             </div>
         </div>
-<div class="footer">
-                <p>Operated by <a href="https://www.linkedin.com/in/md-hadisur-rahman24" target="_blank">Hadisur Rahman</a></p>
-            </div>
+        
+        <div class="footer">
+            <p>Operated by <a href="https://www.linkedin.com/in/md-hadisur-rahman24" target="_blank">Hadisur Rahman</a></p>
+        </div>
         
         <div id="printableArea" class="printable-area">
             <div class="print-header">
@@ -674,9 +822,15 @@
     </div>
 
     <script>
+        // Set up PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.worker.min.js';
+        
         document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
             const fileInput = document.getElementById('fileInput');
-            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadExcelBtn = document.getElementById('uploadExcelBtn');
+            const uploadPdfBtn = document.getElementById('uploadPdfBtn');
+            const uploadStatus = document.getElementById('uploadStatus');
             const poForm = document.getElementById('poForm');
             const poTableBody = document.getElementById('poTableBody');
             const vendorFilter = document.getElementById('vendorFilter');
@@ -716,12 +870,19 @@
             const securityCodeInput = document.getElementById('securityCode');
             const cancelClearBtn = document.getElementById('cancelClearBtn');
             const confirmClearBtn = document.getElementById('confirmClearBtn');
+            const assetsDownloadBtn = document.getElementById('assetsDownloadBtn');
+            const pdfPreview = document.getElementById('pdfPreview');
+            const pdfPreviewContent = document.getElementById('pdfPreviewContent');
+            const confirmPdfDataBtn = document.getElementById('confirmPdfDataBtn');
+            const pdfLoadingMessage = document.getElementById('pdfLoadingMessage');
             
+            // Data variables
             let poData = [];
             let vendors = [];
             let stores = [];
             let logoDataUrl = null;
             let signatureDataUrl = null;
+            let extractedPdfData = null;
             
             // Store details mapping
             const storeDetails = {
@@ -757,137 +918,326 @@
                 }
             };
             
-            // Load data from localStorage if available
-            loadFromLocalStorage();
-            
-            // Set today's date as default for both PO Date and Delivery Date
-            const today = new Date();
-            document.getElementById('poDate').valueAsDate = today;
-            
-            // Set delivery date to 7 days from today by default
-            const deliveryDate = new Date();
-            deliveryDate.setDate(today.getDate() + 7);
-            document.getElementById('deliveryDate').valueAsDate = deliveryDate;
-            
-            // Store name change handler
-            storeNameSelect.addEventListener('change', function() {
-                const selectedStore = this.value;
+            // Initialize the application
+            function init() {
+                // Load data from localStorage if available
+                loadFromLocalStorage();
                 
-                if (selectedStore && selectedStore !== "Other" && storeDetails[selectedStore]) {
-                    // Auto-fill the details
-                    deliveryAddressTextarea.value = storeDetails[selectedStore].address;
-                    storePersonNameInput.value = storeDetails[selectedStore].personName;
-                    storePersonPhoneInput.value = storeDetails[selectedStore].personPhone;
-                } else if (selectedStore === "Other") {
-                    // Clear the fields for custom entry
-                    deliveryAddressTextarea.value = "";
-                    storePersonNameInput.value = "";
-                    storePersonPhoneInput.value = "";
-                }
-                // If the store is not in the list, do nothing (keep existing values)
+                // Set today's date as default for both PO Date and Delivery Date
+                const today = new Date();
+                document.getElementById('poDate').valueAsDate = today;
                 
-                // Save to localStorage
-                saveToLocalStorage();
-            });
-            
-            // Logo handling
-            logoInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        logoDataUrl = e.target.result;
-                        logoPreview.innerHTML = `<img src="${logoDataUrl}" class="logo-preview" alt="Logo">`;
-                        removeLogoBtn.style.display = 'inline-block';
-                        saveToLocalStorage();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            removeLogoBtn.addEventListener('click', function() {
-                logoDataUrl = null;
-                logoInput.value = '';
-                logoPreview.innerHTML = 'Logo Preview';
-                logoPreview.className = 'logo-placeholder';
-                removeLogoBtn.style.display = 'none';
-                saveToLocalStorage();
-            });
-            
-            // Signature handling
-            signatureInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        signatureDataUrl = e.target.result;
-                        signaturePreview.innerHTML = `<img src="${signatureDataUrl}" class="signature-preview" alt="Signature">`;
-                        removeSignatureBtn.style.display = 'inline-block';
-                        saveToLocalStorage();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            removeSignatureBtn.addEventListener('click', function() {
-                signatureDataUrl = null;
-                signatureInput.value = '';
-                signaturePreview.innerHTML = 'Signature Preview';
-                signaturePreview.className = 'signature-placeholder';
-                removeSignatureBtn.style.display = 'none';
-                saveToLocalStorage();
-            });
-            
-            // Security modal handlers
-            clearDataBtn.addEventListener('click', function() {
-                securityModal.style.display = 'flex';
-                securityCodeInput.value = '';
-            });
-            
-            cancelClearBtn.addEventListener('click', function() {
-                securityModal.style.display = 'none';
-            });
-            
-            confirmClearBtn.addEventListener('click', function() {
-                if (securityCodeInput.value === '19591') {
-                    clearAllData();
-                    securityModal.style.display = 'none';
-                    alert('All data has been cleared successfully.');
-                } else {
-                    alert('Invalid security code. Please try again.');
-                }
-            });
-            
-            // Close modal when clicking outside
-            securityModal.addEventListener('click', function(e) {
-                if (e.target === securityModal) {
-                    securityModal.style.display = 'none';
-                }
-            });
-            
-            uploadBtn.addEventListener('click', function() {
-                if (!fileInput.files.length) {
-                    alert('Please select an Excel file to upload.');
-                    return;
-                }
+                // Set delivery date to 7 days from today by default
+                const deliveryDate = new Date();
+                deliveryDate.setDate(today.getDate() + 7);
+                document.getElementById('deliveryDate').valueAsDate = deliveryDate;
                 
-                const file = fileInput.files[0];
-                const reader = new FileReader();
+                // Set up event listeners
+                setupEventListeners();
+            }
+            
+            // Set up all event listeners
+            function setupEventListeners() {
+                // Assets Download button
+                assetsDownloadBtn.addEventListener('click', function() {
+                    window.open('https://drive.google.com/drive/folders/1HtjXC5o4_DlRQE8KlqZ4CLM7w1hdWxn2?usp=sharing', '_blank');
+                });
                 
-                reader.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                // Store name change handler
+                storeNameSelect.addEventListener('change', function() {
+                    const selectedStore = this.value;
                     
-                    // Assuming the first sheet is the one we need
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                    
-                    processExcelData(jsonData);
-                };
+                    if (selectedStore && selectedStore !== "Other" && storeDetails[selectedStore]) {
+                        // Auto-fill the details
+                        deliveryAddressTextarea.value = storeDetails[selectedStore].address;
+                        storePersonNameInput.value = storeDetails[selectedStore].personName;
+                        storePersonPhoneInput.value = storeDetails[selectedStore].personPhone;
+                    } else if (selectedStore === "Other") {
+                        // Clear the fields for custom entry
+                        deliveryAddressTextarea.value = "";
+                        storePersonNameInput.value = "";
+                        storePersonPhoneInput.value = "";
+                    }
+                    // Save to localStorage
+                    saveToLocalStorage();
+                });
                 
-                reader.readAsArrayBuffer(file);
-            });
+                // Excel upload handler
+                uploadExcelBtn.addEventListener('click', function() {
+                    if (!fileInput.files.length) {
+                        showStatus('Please select an Excel file to upload.', 'error');
+                        return;
+                    }
+                    
+                    const file = fileInput.files[0];
+                    if (!file.name.match(/\.(xlsx|xls)$/)) {
+                        showStatus('Please select a valid Excel file (.xlsx or .xls).', 'error');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            
+                            // Assuming the first sheet is the one we need
+                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                            
+                            if (jsonData.length === 0) {
+                                showStatus('The Excel file is empty or has no data.', 'error');
+                                return;
+                            }
+                            
+                            processExcelData(jsonData);
+                            showStatus('Excel data loaded successfully!', 'success');
+                        } catch (error) {
+                            console.error('Error processing Excel:', error);
+                            showStatus('Error processing Excel file: ' + error.message, 'error');
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        showStatus('Error reading the file.', 'error');
+                    };
+                    
+                    reader.readAsArrayBuffer(file);
+                });
+                
+                // PDF upload handler - IMPROVED VERSION
+                uploadPdfBtn.addEventListener('click', function() {
+                    if (!fileInput.files.length) {
+                        showStatus('Please select a PDF file to upload.', 'error');
+                        return;
+                    }
+                    
+                    const file = fileInput.files[0];
+                    if (!file.name.match(/\.(pdf)$/)) {
+                        showStatus('Please select a valid PDF file.', 'error');
+                        return;
+                    }
+                    
+                    // Show loading message
+                    pdfLoadingMessage.style.display = 'block';
+                    pdfPreviewContent.innerHTML = '';
+                    pdfPreview.style.display = 'block';
+                    
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const typedarray = new Uint8Array(e.target.result);
+                        
+                        // Load the PDF
+                        pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                            console.log('PDF loaded with ' + pdf.numPages + ' pages');
+                            
+                            // Get all pages text content
+                            let fullText = '';
+                            const pagePromises = [];
+                            
+                            for (let i = 1; i <= pdf.numPages; i++) {
+                                pagePromises.push(
+                                    pdf.getPage(i).then(function(page) {
+                                        return page.getTextContent();
+                                    }).then(function(textContent) {
+                                        let pageText = '';
+                                        
+                                        // Improved text extraction with better formatting
+                                        const items = textContent.items;
+                                        let lastY = -1;
+                                        let line = '';
+                                        
+                                        // Sort by Y coordinate (top to bottom) and then X (left to right)
+                                        items.sort((a, b) => {
+                                            if (Math.abs(a.transform[5] - b.transform[5]) < 5) {
+                                                return a.transform[4] - b.transform[4];
+                                            }
+                                            return b.transform[5] - a.transform[5];
+                                        });
+                                        
+                                        for (let j = 0; j < items.length; j++) {
+                                            const item = items[j];
+                                            
+                                            // If Y position changes significantly, start a new line
+                                            if (lastY !== -1 && Math.abs(lastY - item.transform[5]) > 5) {
+                                                pageText += line + '\n';
+                                                line = '';
+                                            }
+                                            
+                                            line += item.str + ' ';
+                                            lastY = item.transform[5];
+                                        }
+                                        
+                                        // Add the last line
+                                        if (line) {
+                                            pageText += line + '\n';
+                                        }
+                                        
+                                        return pageText;
+                                    })
+                                );
+                            }
+                            
+                            return Promise.all(pagePromises);
+                        }).then(function(pagesText) {
+                            // Combine all pages text
+                            const fullText = pagesText.join('\n\n');
+                            console.log("Full PDF text:", fullText);
+                            
+                            // Parse the PDF content to extract PO data
+                            extractedPdfData = parsePdfContent(fullText);
+                            
+                            // Hide loading message
+                            pdfLoadingMessage.style.display = 'none';
+                            
+                            // Show the preview
+                            showPdfPreview(extractedPdfData);
+                            
+                        }).catch(function(error) {
+                            console.error('Error parsing PDF:', error);
+                            pdfLoadingMessage.style.display = 'none';
+                            showStatus('Error parsing PDF: ' + error.message, 'error');
+                        });
+                    };
+                    
+                    reader.onerror = function() {
+                        showStatus('Error reading the PDF file.', 'error');
+                    };
+                    
+                    reader.readAsArrayBuffer(file);
+                });
+                
+                // Confirm PDF data button handler
+                confirmPdfDataBtn.addEventListener('click', function() {
+                    if (extractedPdfData) {
+                        processPdfData(extractedPdfData);
+                        pdfPreview.style.display = 'none';
+                        showStatus('PDF data loaded successfully! You can now edit the values.', 'success');
+                    }
+                });
+                
+                // Logo handling
+                logoInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            logoDataUrl = e.target.result;
+                            logoPreview.innerHTML = `<img src="${logoDataUrl}" class="logo-preview" alt="Logo">`;
+                            removeLogoBtn.style.display = 'inline-block';
+                            saveToLocalStorage();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                removeLogoBtn.addEventListener('click', function() {
+                    logoDataUrl = null;
+                    logoInput.value = '';
+                    logoPreview.innerHTML = 'Logo Preview';
+                    logoPreview.className = 'logo-placeholder';
+                    removeLogoBtn.style.display = 'none';
+                    saveToLocalStorage();
+                });
+                
+                // Signature handling
+                signatureInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            signatureDataUrl = e.target.result;
+                            signaturePreview.innerHTML = `<img src="${signatureDataUrl}" class="signature-preview" alt="Signature">`;
+                            removeSignatureBtn.style.display = 'inline-block';
+                            saveToLocalStorage();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                removeSignatureBtn.addEventListener('click', function() {
+                    signatureDataUrl = null;
+                    signatureInput.value = '';
+                    signaturePreview.innerHTML = 'Signature Preview';
+                    signaturePreview.className = 'signature-placeholder';
+                    removeSignatureBtn.style.display = 'none';
+                    saveToLocalStorage();
+                });
+                
+                // Security modal handlers
+                clearDataBtn.addEventListener('click', function() {
+                    securityModal.style.display = 'flex';
+                    securityCodeInput.value = '';
+                });
+                
+                cancelClearBtn.addEventListener('click', function() {
+                    securityModal.style.display = 'none';
+                });
+                
+                confirmClearBtn.addEventListener('click', function() {
+                    if (securityCodeInput.value === '19591') {
+                        clearAllData();
+                        securityModal.style.display = 'none';
+                        showStatus('All data has been cleared successfully.', 'success');
+                    } else {
+                        showStatus('Invalid security code. Please try again.', 'error');
+                    }
+                });
+                
+                // Close modal when clicking outside
+                securityModal.addEventListener('click', function(e) {
+                    if (e.target === securityModal) {
+                        securityModal.style.display = 'none';
+                    }
+                });
+                
+                // Filter handlers
+                vendorFilter.addEventListener('change', function() {
+                    renderTable();
+                    calculateTotalValue();
+                });
+                
+                storeFilter.addEventListener('change', function() {
+                    renderTable();
+                    calculateTotalValue();
+                });
+                
+                // Action buttons
+                printBtn.addEventListener('click', function() {
+                    generatePrintablePO();
+                    printableArea.style.display = 'block';
+                    window.print();
+                    printableArea.style.display = 'none';
+                });
+                
+                pdfBtn.addEventListener('click', function() {
+                    generatePDF();
+                });
+                
+                clearBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to clear the current data?')) {
+                        clearCurrentData();
+                        showStatus('Current data cleared successfully.', 'success');
+                    }
+                });
+            }
             
+            // Show status message
+            function showStatus(message, type) {
+                uploadStatus.textContent = message;
+                uploadStatus.className = 'status-message';
+                uploadStatus.classList.add(type === 'success' ? 'status-success' : 'status-error');
+                uploadStatus.style.display = 'block';
+                
+                // Auto hide after 5 seconds
+                setTimeout(function() {
+                    uploadStatus.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Process Excel data
             function processExcelData(data) {
                 poData = data.map((row, index) => {
                     return {
@@ -937,6 +1287,314 @@
                 saveToLocalStorage();
             }
             
+            // IMPROVED PDF parsing function to capture all items
+            function parsePdfContent(text) {
+                const data = {
+                    header: {},
+                    items: []
+                };
+                
+                console.log("Parsing PDF content...");
+                
+                // Extract header information with improved regex patterns
+                const poDateMatch = text.match(/PO Date:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+                if (poDateMatch) data.header.poDate = poDateMatch[1];
+                
+                const refNoMatch = text.match(/Reference No:\s*([^\n\r]+)/i);
+                if (refNoMatch) data.header.refNo = refNoMatch[1].trim();
+                
+                const deliveryDateMatch = text.match(/Delivery Date:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+                if (deliveryDateMatch) data.header.deliveryDate = deliveryDateMatch[1];
+                
+                const storePersonMatch = text.match(/Store Person:\s*([^\n\r]+)/i);
+                if (storePersonMatch) data.header.storePerson = storePersonMatch[1].trim();
+                
+                const storePersonPhoneMatch = text.match(/Store Person Phone:\s*([^\n\r]+)/i);
+                if (storePersonPhoneMatch) data.header.storePersonPhone = storePersonPhoneMatch[1].trim();
+                
+                const mainStoreMatch = text.match(/Main Store Name:\s*([^\n\r]+)/i);
+                if (mainStoreMatch) data.header.mainStore = mainStoreMatch[1].trim();
+                
+                const vendorMatch = text.match(/Vendor:\s*([^\n\r]+)/i);
+                if (vendorMatch) data.header.vendor = vendorMatch[1].trim();
+                
+                // Extract delivery address with improved pattern
+                const addressMatch = text.match(/Delivery Address:([\s\S]*?)(?=Sl No|Code|Products Name|Total PO Value|$)/i);
+                if (addressMatch) {
+                    data.header.deliveryAddress = addressMatch[1].replace(/\n/g, ' ').trim();
+                }
+                
+                // IMPROVED Table extraction - more robust approach
+                const lines = text.split('\n');
+                let inTable = false;
+                let tableLines = [];
+                
+                // Find the table section
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // Look for table start (header)
+                    if ((line.includes('Sl No') && line.includes('Code') && line.includes('Products Name')) ||
+                        (line.includes('CPU') && line.includes('PO Qty') && line.includes('PO Value'))) {
+                        inTable = true;
+                        continue;
+                    }
+                    
+                    // Look for table end
+                    if (line.includes('Total PO Value') || line.includes('Authorized Signature') || line.includes('For questions')) {
+                        inTable = false;
+                        continue;
+                    }
+                    
+                    if (inTable && line) {
+                        tableLines.push(line);
+                    }
+                }
+                
+                console.log("Table lines found:", tableLines);
+                
+                // Parse table lines with improved logic
+                for (let i = 0; i < tableLines.length; i++) {
+                    const line = tableLines[i];
+                    
+                    // Skip empty lines and header-like lines
+                    if (!line || line.includes('Sl No') || line.includes('Code') || 
+                        line.includes('Products Name') || line.includes('CPU') || 
+                        line.includes('PO Qty') || line.includes('PO Value')) {
+                        continue;
+                    }
+                    
+                    // Try multiple parsing strategies
+                    let item = parseTableRow(line);
+                    
+                    if (item && !isNaN(item.slNo) && item.slNo > 0) {
+                        // Add vendor and store name if available from header
+                        if (data.header.vendor) item.vendorName = data.header.vendor;
+                        if (data.header.mainStore) item.storeName = data.header.mainStore;
+                        
+                        data.items.push(item);
+                        console.log("Added item:", item);
+                    }
+                }
+                
+                console.log("Final extracted data:", data);
+                return data;
+            }
+            
+            // Helper function to parse table rows with multiple strategies
+            function parseTableRow(line) {
+                // Strategy 1: Regex pattern for standard format
+                const rowPattern1 = /^(\d+)\s+([A-Za-z0-9\-\_]+)\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+)\s+([\d,]+\.?\d*)$/;
+                const match1 = line.match(rowPattern1);
+                
+                if (match1) {
+                    return {
+                        slNo: parseInt(match1[1].replace(/,/g, '')),
+                        code: match1[2],
+                        productName: match1[3].trim(),
+                        cpu: parseFloat(match1[4].replace(/,/g, '')),
+                        poQty: parseInt(match1[5].replace(/,/g, '')),
+                        poValue: parseFloat(match1[6].replace(/,/g, ''))
+                    };
+                }
+                
+                // Strategy 2: Split by multiple spaces and try to reconstruct
+                const parts = line.split(/\s{2,}/).filter(part => part.trim() !== '');
+                
+                if (parts.length >= 6) {
+                    const slNo = parseInt(parts[0].replace(/,/g, ''));
+                    if (!isNaN(slNo)) {
+                        // The last three parts should be numbers
+                        const cpu = parseFloat(parts[parts.length - 3].replace(/,/g, ''));
+                        const poQty = parseInt(parts[parts.length - 2].replace(/,/g, ''));
+                        const poValue = parseFloat(parts[parts.length - 1].replace(/,/g, ''));
+                        
+                        if (!isNaN(cpu) && !isNaN(poQty) && !isNaN(poValue)) {
+                            // The code is the second part
+                            const code = parts[1];
+                            // The product name is everything in between
+                            const productName = parts.slice(2, parts.length - 3).join(' ').trim();
+                            
+                            return {
+                                slNo: slNo,
+                                code: code,
+                                productName: productName,
+                                cpu: cpu,
+                                poQty: poQty,
+                                poValue: poValue
+                            };
+                        }
+                    }
+                }
+                
+                // Strategy 3: More flexible parsing for irregular formats
+                if (parts.length >= 5) {
+                    const slNo = parseInt(parts[0].replace(/,/g, ''));
+                    if (!isNaN(slNo)) {
+                        // Try to find the numeric values from the end
+                        let cpu, poQty, poValue;
+                        let codeIndex = 1;
+                        let productNameParts = [];
+                        
+                        // Work backwards to find the numeric values
+                        for (let i = parts.length - 1; i >= 0; i--) {
+                            const part = parts[i];
+                            const numValue = parseFloat(part.replace(/,/g, ''));
+                            
+                            if (!isNaN(numValue)) {
+                                if (poValue === undefined) {
+                                    poValue = numValue;
+                                } else if (poQty === undefined) {
+                                    poQty = numValue;
+                                } else if (cpu === undefined) {
+                                    cpu = numValue;
+                                    // Once we have all three numbers, stop
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (cpu !== undefined && poQty !== undefined && poValue !== undefined) {
+                            // Find where the numbers start
+                            const numStartIndex = parts.findIndex(part => 
+                                part === cpu.toString() || part === poQty.toString() || part === poValue.toString());
+                            
+                            if (numStartIndex > 2) {
+                                const code = parts[1];
+                                const productName = parts.slice(2, numStartIndex).join(' ').trim();
+                                
+                                return {
+                                    slNo: slNo,
+                                    code: code,
+                                    productName: productName,
+                                    cpu: cpu,
+                                    poQty: poQty,
+                                    poValue: poValue
+                                };
+                            }
+                        }
+                    }
+                }
+                
+                console.log("Could not parse line:", line);
+                return null;
+            }
+            
+            // Show PDF preview with extracted data
+            function showPdfPreview(pdfData) {
+                let previewHtml = '<h5>Extracted Header Information:</h5>';
+                previewHtml += '<ul>';
+                
+                if (pdfData.header.poDate) previewHtml += `<li>PO Date: ${pdfData.header.poDate}</li>`;
+                if (pdfData.header.refNo) previewHtml += `<li>Reference No: ${pdfData.header.refNo}</li>`;
+                if (pdfData.header.deliveryDate) previewHtml += `<li>Delivery Date: ${pdfData.header.deliveryDate}</li>`;
+                if (pdfData.header.storePerson) previewHtml += `<li>Store Person: ${pdfData.header.storePerson}</li>`;
+                if (pdfData.header.storePersonPhone) previewHtml += `<li>Store Person Phone: ${pdfData.header.storePersonPhone}</li>`;
+                if (pdfData.header.mainStore) previewHtml += `<li>Main Store: ${pdfData.header.mainStore}</li>`;
+                if (pdfData.header.vendor) previewHtml += `<li>Vendor: ${pdfData.header.vendor}</li>`;
+                if (pdfData.header.deliveryAddress) previewHtml += `<li>Delivery Address: ${pdfData.header.deliveryAddress}</li>`;
+                
+                previewHtml += '</ul>';
+                
+                previewHtml += `<h5>Extracted Items (${pdfData.items.length} items):</h5>`;
+                
+                if (pdfData.items.length > 0) {
+                    previewHtml += '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
+                    previewHtml += '<thead><tr><th style="border: 1px solid #ddd; padding: 8px;">Sl No</th><th style="border: 1px solid #ddd; padding: 8px;">Code</th><th style="border: 1px solid #ddd; padding: 8px;">Product Name</th><th style="border: 1px solid #ddd; padding: 8px;">CPU</th><th style="border: 1px solid #ddd; padding: 8px;">PO Qty</th><th style="border: 1px solid #ddd; padding: 8px;">PO Value</th></tr></thead>';
+                    previewHtml += '<tbody>';
+                    
+                    pdfData.items.forEach(item => {
+                        previewHtml += `<tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${item.slNo}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${item.code}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${item.productName}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${item.cpu}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${item.poQty}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${item.poValue}</td>
+                        </tr>`;
+                    });
+                    
+                    previewHtml += '</tbody></table>';
+                } else {
+                    previewHtml += '<p style="color: red;">No table data could be extracted from the PDF. Please make sure this is a valid PO PDF generated by this tool.</p>';
+                }
+                
+                pdfPreviewContent.innerHTML = previewHtml;
+                pdfPreview.style.display = 'block';
+            }
+            
+            // Process PDF data and populate the form
+            function processPdfData(pdfData) {
+                // Set header information
+                if (pdfData.header.poDate) document.getElementById('poDate').value = pdfData.header.poDate;
+                if (pdfData.header.refNo) document.getElementById('refNo').value = pdfData.header.refNo;
+                if (pdfData.header.deliveryDate) document.getElementById('deliveryDate').value = pdfData.header.deliveryDate;
+                if (pdfData.header.storePerson) document.getElementById('storePersonName').value = pdfData.header.storePerson;
+                if (pdfData.header.storePersonPhone) document.getElementById('storePersonPhone').value = pdfData.header.storePersonPhone;
+                if (pdfData.header.mainStore) document.getElementById('storeName').value = pdfData.header.mainStore;
+                if (pdfData.header.deliveryAddress) document.getElementById('deliveryAddress').value = pdfData.header.deliveryAddress;
+                if (pdfData.header.vendor) {
+                    // Set the vendor filter to the extracted vendor
+                    vendorFilter.innerHTML = '<option value="all">All Vendors</option>';
+                    const option = document.createElement('option');
+                    option.value = pdfData.header.vendor;
+                    option.textContent = pdfData.header.vendor;
+                    vendorFilter.appendChild(option);
+                    vendorFilter.value = pdfData.header.vendor;
+                }
+                
+                // Process items
+                poData = pdfData.items.map(item => {
+                    return {
+                        originalSlNo: item.slNo,
+                        vendorName: item.vendorName || pdfData.header.vendor || '',
+                        code: item.code,
+                        productName: item.productName,
+                        storeName: item.storeName || pdfData.header.mainStore || '',
+                        cpu: item.cpu,
+                        poQty: item.poQty,
+                        poValue: item.poValue
+                    };
+                });
+                
+                // Extract unique vendors
+                vendors = [...new Set(poData.map(item => item.vendorName))].filter(v => v);
+                
+                // Extract unique stores
+                stores = [...new Set(poData.map(item => item.storeName))].filter(s => s);
+                
+                // Populate vendor filter if not already set
+                if (!pdfData.header.vendor) {
+                    vendorFilter.innerHTML = '<option value="all">All Vendors</option>';
+                    vendors.forEach(vendor => {
+                        const option = document.createElement('option');
+                        option.value = vendor;
+                        option.textContent = vendor;
+                        vendorFilter.appendChild(option);
+                    });
+                }
+                
+                // Populate store filter
+                storeFilter.innerHTML = '<option value="all">All Stores</option>';
+                stores.forEach(store => {
+                    const option = document.createElement('option');
+                    option.value = store;
+                    option.textContent = store;
+                    storeFilter.appendChild(option);
+                });
+                
+                // Display the data
+                renderTable();
+                poForm.style.display = 'block';
+                
+                // Calculate initial total
+                calculateTotalValue();
+                
+                // Save to localStorage
+                saveToLocalStorage();
+            }
+            
+            // Render the table with PO data - UPDATED to make Code and Products Name editable
             function renderTable() {
                 poTableBody.innerHTML = '';
                 const selectedVendor = vendorFilter.value;
@@ -956,8 +1614,8 @@
                     row.innerHTML = `
                         <td>${slNo}</td>
                         <td>${item.vendorName}</td>
-                        <td>${item.code}</td>
-                        <td>${item.productName}</td>
+                        <td><input type="text" class="editable-text code" value="${item.code}" data-index="${poData.indexOf(item)}"></td>
+                        <td><input type="text" class="editable-text productName" value="${item.productName}" data-index="${poData.indexOf(item)}"></td>
                         <td>${item.storeName}</td>
                         <td><input type="number" class="editable cpu" value="${item.cpu}" data-index="${poData.indexOf(item)}" step="0.01"></td>
                         <td><input type="number" class="editable poQty" value="${item.poQty}" data-index="${poData.indexOf(item)}"></td>
@@ -968,33 +1626,53 @@
                 });
                 
                 // Add event listeners to editable fields
-                document.querySelectorAll('.editable').forEach(input => {
+                document.querySelectorAll('.editable, .editable-text').forEach(input => {
                     input.addEventListener('change', handleCellEdit);
+                    input.addEventListener('input', handleCellEdit); // For text fields to update immediately
                 });
             }
             
+            // Handle cell edit events - UPDATED to handle text fields
             function handleCellEdit(e) {
                 const index = parseInt(e.target.dataset.index);
-                const field = e.target.classList.contains('cpu') ? 'cpu' : 'poQty';
-                const value = parseFloat(e.target.value) || 0;
+                let field, value;
+                
+                if (e.target.classList.contains('cpu')) {
+                    field = 'cpu';
+                    value = parseFloat(e.target.value) || 0;
+                } else if (e.target.classList.contains('poQty')) {
+                    field = 'poQty';
+                    value = parseInt(e.target.value) || 0;
+                } else if (e.target.classList.contains('code')) {
+                    field = 'code';
+                    value = e.target.value || '';
+                } else if (e.target.classList.contains('productName')) {
+                    field = 'productName';
+                    value = e.target.value || '';
+                } else {
+                    return; // Unknown field
+                }
                 
                 // Update the data
                 poData[index][field] = value;
                 
-                // Recalculate PO Value
-                poData[index].poValue = poData[index].cpu * poData[index].poQty;
-                
-                // Update the displayed PO Value
-                const row = e.target.closest('tr');
-                row.querySelector('.poValue').textContent = poData[index].poValue.toFixed(2);
-                
-                // Recalculate total
-                calculateTotalValue();
+                // Recalculate PO Value if CPU or PO Qty changed
+                if (field === 'cpu' || field === 'poQty') {
+                    poData[index].poValue = poData[index].cpu * poData[index].poQty;
+                    
+                    // Update the displayed PO Value
+                    const row = e.target.closest('tr');
+                    row.querySelector('.poValue').textContent = poData[index].poValue.toFixed(2);
+                    
+                    // Recalculate total
+                    calculateTotalValue();
+                }
                 
                 // Save to localStorage
                 saveToLocalStorage();
             }
             
+            // Calculate total PO value
             function calculateTotalValue() {
                 const selectedVendor = vendorFilter.value;
                 const selectedStore = storeFilter.value;
@@ -1009,27 +1687,83 @@
                 totalValueSpan.textContent = total.toFixed(2);
             }
             
-            vendorFilter.addEventListener('change', function() {
-                renderTable();
-                calculateTotalValue();
-            });
+            // Generate printable PO
+            function generatePrintablePO() {
+                // Get header values
+                const poDate = document.getElementById('poDate').value;
+                const refNo = document.getElementById('refNo').value;
+                const mainStoreName = document.getElementById('storeName').value;
+                const deliveryAddress = document.getElementById('deliveryAddress').value;
+                const selectedVendor = vendorFilter.value;
+                const selectedStore = storeFilter.value;
+                const contactName = document.getElementById('contactName').value;
+                const contactPhone = document.getElementById('contactPhone').value;
+                const contactEmail = document.getElementById('contactEmail').value;
+                const storePersonName = document.getElementById('storePersonName').value;
+                const storePersonPhone = document.getElementById('storePersonPhone').value;
+                const deliveryDate = document.getElementById('deliveryDate').value;
+                
+                // Set print header values
+                printDate.textContent = poDate;
+                printRefNo.textContent = refNo;
+                printStoreName.textContent = mainStoreName;
+                printVendor.textContent = selectedVendor === 'all' ? 'Multiple Vendors' : selectedVendor;
+                printDeliveryAddress.textContent = deliveryAddress || 'Not specified';
+                printContactName.textContent = contactName;
+                printContactPhone.textContent = contactPhone;
+                printContactEmail.textContent = contactEmail;
+                printStorePersonName.textContent = storePersonName || 'Not specified';
+                printStorePersonPhone.textContent = storePersonPhone || 'Not specified';
+                printDeliveryDate.textContent = deliveryDate || 'Not specified';
+                
+                // Set logo or company name
+                if (logoDataUrl) {
+                    printLogoContainer.innerHTML = `<img src="${logoDataUrl}" style="max-height: 80px; max-width: 200px;" alt="Company Logo">`;
+                } else {
+                    printLogoContainer.innerHTML = '<h2>ROSHOD</h2>';
+                }
+                
+                // Set signature if available
+                if (signatureDataUrl) {
+                    printSignatureContainer.innerHTML = `<img src="${signatureDataUrl}" style="max-height: 50px; max-width: 150px;" alt="Signature">`;
+                } else {
+                    printSignatureContainer.innerHTML = '';
+                }
+                
+                // Generate printable table
+                printTableBody.innerHTML = '';
+                
+                const filteredData = poData.filter(item => {
+                    const vendorMatch = selectedVendor === 'all' || item.vendorName === selectedVendor;
+                    const storeMatch = selectedStore === 'all' || item.storeName === selectedStore;
+                    return vendorMatch && storeMatch;
+                });
+                
+                let totalValue = 0;
+                
+                // Auto-generate SL numbers for filtered data in PDF
+                filteredData.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    const slNo = index + 1; // Auto-generated SL number
+                    
+                    row.innerHTML = `
+                        <td>${slNo}</td>
+                        <td>${item.code}</td>
+                        <td>${item.productName}</td>
+                        <td>${item.cpu.toFixed(2)}</td>
+                        <td>${item.poQty}</td>
+                        <td>${item.poValue.toFixed(2)}</td>
+                    `;
+                    
+                    printTableBody.appendChild(row);
+                    
+                    totalValue += item.poValue;
+                });
+                
+                printTotalValue.textContent = totalValue.toFixed(2);
+            }
             
-            storeFilter.addEventListener('change', function() {
-                renderTable();
-                calculateTotalValue();
-            });
-            
-            printBtn.addEventListener('click', function() {
-                generatePrintablePO();
-                printableArea.style.display = 'block';
-                window.print();
-                printableArea.style.display = 'none';
-            });
-            
-            pdfBtn.addEventListener('click', function() {
-                generatePDF();
-            });
-            
+            // Generate PDF
             function generatePDF() {
                 // Get header values
                 const poDate = document.getElementById('poDate').value;
@@ -1077,11 +1811,11 @@
                 doc.text('PURCHASE ORDER', 105, yPosition, { align: 'center' });
                 yPosition += 20;
                 
-                // Add details section - EXACTLY like the image
+                // Add details section
                 doc.setFontSize(11);
                 doc.setFont('helvetica', 'normal');
                 
-                // Left side details - single column format like the image
+                // Left side details
                 doc.text(`PO Date: ${poDate}`, 14, yPosition);
                 doc.text(`Reference No: ${refNo}`, 14, yPosition + 7);
                 doc.text(`Delivery Date: ${deliveryDate}`, 14, yPosition + 14);
@@ -1189,81 +1923,7 @@
                 doc.save('purchase_order.pdf');
             }
             
-            function generatePrintablePO() {
-                // Get header values
-                const poDate = document.getElementById('poDate').value;
-                const refNo = document.getElementById('refNo').value;
-                const mainStoreName = document.getElementById('storeName').value;
-                const deliveryAddress = document.getElementById('deliveryAddress').value;
-                const selectedVendor = vendorFilter.value;
-                const selectedStore = storeFilter.value;
-                const contactName = document.getElementById('contactName').value;
-                const contactPhone = document.getElementById('contactPhone').value;
-                const contactEmail = document.getElementById('contactEmail').value;
-                const storePersonName = document.getElementById('storePersonName').value;
-                const storePersonPhone = document.getElementById('storePersonPhone').value;
-                const deliveryDate = document.getElementById('deliveryDate').value;
-                
-                // Set print header values
-                printDate.textContent = poDate;
-                printRefNo.textContent = refNo;
-                printStoreName.textContent = mainStoreName;
-                printVendor.textContent = selectedVendor === 'all' ? 'Multiple Vendors' : selectedVendor;
-                printDeliveryAddress.textContent = deliveryAddress || 'Not specified';
-                printContactName.textContent = contactName;
-                printContactPhone.textContent = contactPhone;
-                printContactEmail.textContent = contactEmail;
-                printStorePersonName.textContent = storePersonName || 'Not specified';
-                printStorePersonPhone.textContent = storePersonPhone || 'Not specified';
-                printDeliveryDate.textContent = deliveryDate || 'Not specified';
-                
-                // Set logo or company name
-                if (logoDataUrl) {
-                    printLogoContainer.innerHTML = `<img src="${logoDataUrl}" style="max-height: 80px; max-width: 200px;" alt="Company Logo">`;
-                } else {
-                    printLogoContainer.innerHTML = '<h2>ROSHOD</h2>';
-                }
-                
-                // Set signature if available
-                if (signatureDataUrl) {
-                    printSignatureContainer.innerHTML = `<img src="${signatureDataUrl}" style="max-height: 50px; max-width: 150px;" alt="Signature">`;
-                } else {
-                    printSignatureContainer.innerHTML = '';
-                }
-                
-                // Generate printable table
-                printTableBody.innerHTML = '';
-                
-                const filteredData = poData.filter(item => {
-                    const vendorMatch = selectedVendor === 'all' || item.vendorName === selectedVendor;
-                    const storeMatch = selectedStore === 'all' || item.storeName === selectedStore;
-                    return vendorMatch && storeMatch;
-                });
-                
-                let totalValue = 0;
-                
-                // Auto-generate SL numbers for filtered data in PDF
-                filteredData.forEach((item, index) => {
-                    const row = document.createElement('tr');
-                    const slNo = index + 1; // Auto-generated SL number
-                    
-                    row.innerHTML = `
-                        <td>${slNo}</td>
-                        <td>${item.code}</td>
-                        <td>${item.productName}</td>
-                        <td>${item.cpu.toFixed(2)}</td>
-                        <td>${item.poQty}</td>
-                        <td>${item.poValue.toFixed(2)}</td>
-                    `;
-                    
-                    printTableBody.appendChild(row);
-                    
-                    totalValue += item.poValue;
-                });
-                
-                printTotalValue.textContent = totalValue.toFixed(2);
-            }
-            
+            // Save data to localStorage
             function saveToLocalStorage() {
                 const dataToSave = {
                     poData: poData,
@@ -1286,6 +1946,7 @@
                 localStorage.setItem('purchaseOrderData', JSON.stringify(dataToSave));
             }
             
+            // Load data from localStorage
             function loadFromLocalStorage() {
                 const savedData = localStorage.getItem('purchaseOrderData');
                 
@@ -1352,6 +2013,25 @@
                 }
             }
             
+            // Clear current data (keep form structure)
+            function clearCurrentData() {
+                poData = [];
+                vendors = [];
+                stores = [];
+                
+                // Reset table
+                poTableBody.innerHTML = '';
+                totalValueSpan.textContent = '0.00';
+                
+                // Reset filters
+                vendorFilter.innerHTML = '<option value="all">All Vendors</option>';
+                storeFilter.innerHTML = '<option value="all">All Stores</option>';
+                
+                // Save to localStorage
+                saveToLocalStorage();
+            }
+            
+            // Clear all data (reset everything)
             function clearAllData() {
                 // Clear all data
                 poData = [];
@@ -1359,10 +2039,16 @@
                 stores = [];
                 logoDataUrl = null;
                 signatureDataUrl = null;
+                extractedPdfData = null;
                 
                 // Reset form fields
+                const today = new Date();
                 document.getElementById('poDate').valueAsDate = today;
+                
+                const deliveryDate = new Date();
+                deliveryDate.setDate(today.getDate() + 7);
                 document.getElementById('deliveryDate').valueAsDate = deliveryDate;
+                
                 document.getElementById('refNo').value = '';
                 document.getElementById('storeName').value = '';
                 document.getElementById('deliveryAddress').value = '';
@@ -1385,15 +2071,25 @@
                 poTableBody.innerHTML = '';
                 totalValueSpan.textContent = '0.00';
                 
+                // Reset filters
+                vendorFilter.innerHTML = '<option value="all">All Vendors</option>';
+                storeFilter.innerHTML = '<option value="all">All Stores</option>';
+                
                 // Hide form
                 poForm.style.display = 'none';
                 
+                // Hide PDF preview
+                pdfPreview.style.display = 'none';
+                
+                // Clear file input
+                fileInput.value = '';
+                
                 // Clear localStorage
                 localStorage.removeItem('purchaseOrderData');
-                
-                // Reset file input
-                fileInput.value = '';
             }
+            
+            // Initialize the application
+            init();
         });
     </script>
 </body>
