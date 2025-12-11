@@ -155,6 +155,22 @@
             font-size: 12px;
             opacity: 0.7;
         }
+        
+        .url-input-container {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        
+        .url-input-container input {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+        
+        .url-input-container button {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
@@ -218,20 +234,36 @@
                 </label>
 
                 <!-- Logo Upload -->
-                <label class="upload-card rounded-xl p-5 cursor-pointer block border-2 border-transparent hover:border-purple-400">
+                <div class="upload-card rounded-xl p-5 border-2 border-transparent hover:border-purple-400">
                     <div class="flex items-start gap-4">
                         <div class="icon-box bg-purple-100 text-purple-600">🖼️</div>
                         <div class="flex-1">
                             <h3 class="font-semibold text-slate-800">Company Logo</h3>
                             <p class="text-xs text-slate-500 mt-1">PNG, JPG for PDF</p>
-                            <div class="mt-3 text-xs text-purple-600 font-medium flex items-center gap-1">
+                            <label class="mt-3 text-xs text-purple-600 font-medium flex items-center gap-1 cursor-pointer">
                                 <span>Browse Files</span>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </div>
+                            </label>
+                            <input type="file" id="logoFile" accept="image/*" class="hidden" onchange="uploadLogo(event)">
                         </div>
                     </div>
-                    <input type="file" id="logoFile" accept="image/*" class="hidden" onchange="uploadLogo(event)">
-                </label>
+                    
+                    <!-- Direct URL Input Section -->
+                    <div class="url-input-container">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Or enter logo URL:</label>
+                        <div class="flex gap-2">
+                            <input type="url" id="logoUrlInput" 
+                                   class="flex-1 input-modern rounded-lg text-sm" 
+                                   placeholder="https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000"
+                                   value="https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000">
+                            <button onclick="loadLogoFromUrl()" 
+                                    class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+                                Load
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Press Enter or click Load to use the URL</p>
+                    </div>
+                </div>
 
                 <!-- Signature Upload -->
                 <label class="upload-card rounded-xl p-5 cursor-pointer block border-2 border-transparent hover:border-amber-400">
@@ -490,6 +522,14 @@
         </div>
     </div>
 
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
+            <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-slate-700 font-medium">Loading logo from URL...</p>
+        </div>
+    </div>
+
     <script>
         let allData = [];
         let filteredData = [];
@@ -547,6 +587,22 @@
             setDefaultDates();
             updateCurrentDate();
             renderTableHeaders();
+            
+            // Add event listener for Enter key on logo URL input
+            document.getElementById('logoUrlInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadLogoFromUrl();
+                }
+            });
+            
+            // Auto-load the default logo URL on page load
+            setTimeout(() => {
+                const defaultUrl = document.getElementById('logoUrlInput').value;
+                if (defaultUrl && !logoData) {
+                    console.log('Auto-loading default logo...');
+                    loadLogoFromUrl();
+                }
+            }, 1000);
         });
 
         function updateCurrentDate() {
@@ -572,6 +628,157 @@
                 document.getElementById('storePersonPhone').value = storeDetails[storeName].phone;
             }
             saveToStorage();
+        }
+
+        function loadLogoFromUrl() {
+            const urlInput = document.getElementById('logoUrlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                alert('Please enter a logo URL');
+                return;
+            }
+
+            // Show loading spinner
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+
+            // Create a proxy URL to handle CORS issues with Google Drive images
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            
+            // Try to load the image
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; // Important for CORS
+            
+            img.onload = function() {
+                try {
+                    // Create canvas to convert to data URL
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Convert to data URL
+                    const dataUrl = canvas.toDataURL('image/png');
+                    
+                    // Store and display the logo
+                    logoData = dataUrl;
+                    document.getElementById('logoImg').src = dataUrl;
+                    document.getElementById('logoPreview').classList.remove('hidden');
+                    
+                    // Hide loading spinner
+                    document.getElementById('loadingSpinner').classList.add('hidden');
+                    
+                    saveToStorage();
+                    
+                    // Show success message
+                    showNotification('Logo loaded successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error converting image:', error);
+                    document.getElementById('loadingSpinner').classList.add('hidden');
+                    showNotification('Error converting image. Please try a different URL.', 'error');
+                }
+            };
+            
+            img.onerror = function(error) {
+                console.error('Error loading image:', error);
+                document.getElementById('loadingSpinner').classList.add('hidden');
+                
+                // Try direct approach as fallback
+                tryDirectImageLoad(url);
+            };
+            
+            // Set a timeout for image loading
+            setTimeout(() => {
+                if (!img.complete) {
+                    img.onerror(new Error('Image loading timeout'));
+                }
+            }, 10000);
+            
+            img.src = proxyUrl;
+        }
+
+        function tryDirectImageLoad(url) {
+            // Alternative approach: Use fetch API
+            fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.blob();
+                })
+                .then(blob => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            logoData = reader.result;
+                            document.getElementById('logoImg').src = reader.result;
+                            document.getElementById('logoPreview').classList.remove('hidden');
+                            document.getElementById('loadingSpinner').classList.add('hidden');
+                            saveToStorage();
+                            showNotification('Logo loaded successfully!', 'success');
+                            resolve();
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    document.getElementById('loadingSpinner').classList.add('hidden');
+                    showNotification('Failed to load logo. Please check the URL or try uploading a file instead.', 'error');
+                });
+        }
+
+        function showNotification(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotif = document.querySelector('.notification-toast');
+            if (existingNotif) {
+                existingNotif.remove();
+            }
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification-toast fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-2xl ${
+                type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
+                type === 'error' ? 'bg-gradient-to-r from-red-500 to-rose-600' :
+                'bg-gradient-to-r from-blue-500 to-purple-600'
+            } text-white font-medium flex items-center gap-3 transform transition-all duration-300`;
+            notification.style.transform = 'translateX(150%)';
+            
+            // Add icon based on type
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            notification.innerHTML = `
+                <span class="text-lg">${icon}</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(150%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 4000);
+            
+            // Add click to dismiss
+            notification.addEventListener('click', () => {
+                notification.style.transform = 'translateX(150%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            });
         }
 
         function processExcel(event) {
@@ -609,6 +816,7 @@
                 populateFilters();
                 applyFilters();
                 saveToStorage();
+                showNotification('Excel file loaded successfully!', 'success');
             };
             reader.readAsArrayBuffer(file);
         }
@@ -616,12 +824,24 @@
         function processPDF(event) {
             const file = event.target.files[0];
             if (!file) return;
-            alert('PDF uploaded: ' + file.name + '\nNote: PDF parsing requires manual data entry or OCR integration.');
+            showNotification('PDF uploaded: ' + file.name, 'info');
         }
 
         function uploadLogo(event) {
             const file = event.target.files[0];
             if (!file) return;
+
+            // Validate file type
+            if (!file.type.match('image.*')) {
+                showNotification('Please select an image file (PNG, JPG, etc.)', 'error');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Image file is too large (max 5MB)', 'error');
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -629,6 +849,7 @@
                 document.getElementById('logoImg').src = logoData;
                 document.getElementById('logoPreview').classList.remove('hidden');
                 saveToStorage();
+                showNotification('Logo uploaded successfully!', 'success');
             };
             reader.readAsDataURL(file);
         }
@@ -637,12 +858,19 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            // Validate file type
+            if (!file.type.match('image.*')) {
+                showNotification('Please select an image file (PNG, JPG, etc.)', 'error');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 signatureData = e.target.result;
                 document.getElementById('signatureImg').src = signatureData;
                 document.getElementById('signaturePreview').classList.remove('hidden');
                 saveToStorage();
+                showNotification('Signature uploaded successfully!', 'success');
             };
             reader.readAsDataURL(file);
         }
@@ -651,7 +879,9 @@
             logoData = null;
             document.getElementById('logoPreview').classList.add('hidden');
             document.getElementById('logoFile').value = '';
+            document.getElementById('logoUrlInput').value = 'https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000';
             saveToStorage();
+            showNotification('Logo removed', 'info');
         }
 
         function removeSignature() {
@@ -659,6 +889,7 @@
             document.getElementById('signaturePreview').classList.add('hidden');
             document.getElementById('signatureFile').value = '';
             saveToStorage();
+            showNotification('Signature removed', 'info');
         }
 
         function renderTableHeaders() {
@@ -755,8 +986,9 @@
             
             renderTable();
             calculateTotal();
-            updateVendorFilter(); // Update vendor filter when adding new row
+            updateVendorFilter();
             saveToStorage();
+            showNotification('New row added', 'info');
             
             // Scroll to the new row
             setTimeout(() => {
@@ -768,7 +1000,6 @@
             }, 100);
         }
 
-        // NEW FUNCTION: Update vendor filter dropdown
         function updateVendorFilter() {
             const vendorSelect = document.getElementById('vendorFilter');
             const currentVendor = vendorSelect.value;
@@ -793,7 +1024,6 @@
             }
         }
 
-        // NEW FUNCTION: Update store filter dropdown
         function updateStoreFilter() {
             const storeSelect = document.getElementById('storeFilter');
             const currentStore = storeSelect.value;
@@ -973,9 +1203,10 @@
                 
                 renderTable();
                 calculateTotal();
-                updateVendorFilter(); // Update vendor filter after deletion
-                updateStoreFilter(); // Update store filter after deletion
+                updateVendorFilter();
+                updateStoreFilter();
                 saveToStorage();
+                showNotification('Item deleted', 'info');
             }
         }
 
@@ -989,7 +1220,7 @@
 
         function generatePDF() {
             if (filteredData.length === 0) {
-                alert('Please add some items to the table before generating PDF.');
+                showNotification('Please add some items to the table before generating PDF.', 'error');
                 return;
             }
             
@@ -1275,7 +1506,9 @@
             doc.setTextColor(100, 116, 139);
             doc.text(`Name: ${document.getElementById('contactName').value}, Phone: ${document.getElementById('contactPhone').value}, Email Address: ${document.getElementById('contactEmail').value}`, 15, yPos);
 
-            doc.save(`PO_${document.getElementById('referenceNo').value || 'Order'}_${new Date().toISOString().split('T')[0]}.pdf`);
+            const fileName = `PO_${document.getElementById('referenceNo').value || 'Order'}_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            showNotification('PDF downloaded successfully!', 'success');
         }
 
         function closeModal() {
@@ -1293,11 +1526,12 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'PO Template');
             XLSX.writeFile(wb, 'PO_Template.xlsx');
+            showNotification('Template downloaded successfully!', 'success');
         }
 
         function clearData() {
-            const code = prompt('🔐 Enter security code to clear all data:');
-            if (code === '19591') {
+            // Simple confirmation without security code
+            if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
                 allData = [];
                 filteredData = [];
                 logoData = null;
@@ -1333,10 +1567,9 @@
                 document.getElementById('mainStoreName').value = '';
                 document.getElementById('logoFile').value = '';
                 document.getElementById('signatureFile').value = '';
+                document.getElementById('logoUrlInput').value = 'https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000';
                 
-                alert('✅ All data cleared successfully!');
-            } else if (code !== null) {
-                alert('❌ Invalid security code!');
+                showNotification('All data cleared successfully!', 'success');
             }
         }
 
@@ -1358,7 +1591,8 @@
                 contactPhone: document.getElementById('contactPhone').value,
                 contactEmail: document.getElementById('contactEmail').value,
                 vendorFilter: document.getElementById('vendorFilter').value,
-                storeFilter: document.getElementById('storeFilter').value
+                storeFilter: document.getElementById('storeFilter').value,
+                logoUrl: document.getElementById('logoUrlInput').value
             };
             localStorage.setItem('poToolData', JSON.stringify(data));
         }
@@ -1392,6 +1626,7 @@
                 if (data.contactName) document.getElementById('contactName').value = data.contactName;
                 if (data.contactPhone) document.getElementById('contactPhone').value = data.contactPhone;
                 if (data.contactEmail) document.getElementById('contactEmail').value = data.contactEmail;
+                if (data.logoUrl) document.getElementById('logoUrlInput').value = data.logoUrl;
 
                 if (logoData) {
                     document.getElementById('logoImg').src = logoData;
@@ -1465,6 +1700,7 @@
                 </html>
             `);
             printWindow.document.close();
+            showNotification('PDF sent to printer!', 'success');
         }
     </script>
 </body>
