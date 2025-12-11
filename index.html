@@ -755,6 +755,7 @@
             
             renderTable();
             calculateTotal();
+            updateVendorFilter(); // Update vendor filter when adding new row
             saveToStorage();
             
             // Scroll to the new row
@@ -767,23 +768,59 @@
             }, 100);
         }
 
-        function populateFilters() {
-            const vendors = [...new Set(allData.map(item => item.vendorName))].filter(v => v);
-            const stores = [...new Set(allData.map(item => item.storeName))].filter(s => s);
-
+        // NEW FUNCTION: Update vendor filter dropdown
+        function updateVendorFilter() {
             const vendorSelect = document.getElementById('vendorFilter');
-            const storeSelect = document.getElementById('storeFilter');
-
+            const currentVendor = vendorSelect.value;
+            
+            // Get all unique vendor names from allData
+            const vendors = [...new Set(allData.map(item => item.vendorName))].filter(v => v && v.trim() !== '');
+            
+            // Save existing options except "All Vendors"
             vendorSelect.innerHTML = '<option value="">All Vendors</option>';
-            storeSelect.innerHTML = '<option value="">All Stores</option>';
-
+            
+            // Add vendor options
             vendors.forEach(vendor => {
-                vendorSelect.innerHTML += `<option value="${vendor}">${vendor}</option>`;
+                const option = document.createElement('option');
+                option.value = vendor;
+                option.textContent = vendor;
+                vendorSelect.appendChild(option);
             });
+            
+            // Restore selected vendor if it still exists
+            if (currentVendor && vendors.includes(currentVendor)) {
+                vendorSelect.value = currentVendor;
+            }
+        }
 
+        // NEW FUNCTION: Update store filter dropdown
+        function updateStoreFilter() {
+            const storeSelect = document.getElementById('storeFilter');
+            const currentStore = storeSelect.value;
+            
+            // Get all unique store names from allData
+            const stores = [...new Set(allData.map(item => item.storeName))].filter(s => s && s.trim() !== '');
+            
+            // Save existing options except "All Stores"
+            storeSelect.innerHTML = '<option value="">All Stores</option>';
+            
+            // Add store options
             stores.forEach(store => {
-                storeSelect.innerHTML += `<option value="${store}">${store}</option>`;
+                const option = document.createElement('option');
+                option.value = store;
+                option.textContent = store;
+                storeSelect.appendChild(option);
             });
+            
+            // Restore selected store if it still exists
+            if (currentStore && stores.includes(currentStore)) {
+                storeSelect.value = currentStore;
+            }
+        }
+
+        function populateFilters() {
+            updateVendorFilter();
+            updateStoreFilter();
         }
 
         function applyFilters() {
@@ -905,6 +942,14 @@
 
             renderTable();
             calculateTotal();
+            
+            // Update filters when vendor or store is updated
+            if (field === 'vendorName') {
+                updateVendorFilter();
+            } else if (field === 'storeName') {
+                updateStoreFilter();
+            }
+            
             saveToStorage();
         }
 
@@ -928,6 +973,8 @@
                 
                 renderTable();
                 calculateTotal();
+                updateVendorFilter(); // Update vendor filter after deletion
+                updateStoreFilter(); // Update store filter after deletion
                 saveToStorage();
             }
         }
