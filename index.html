@@ -140,6 +140,21 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 2px;
         }
+        
+        .editable-header {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .editable-header:hover::after {
+            content: '✏️';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
@@ -349,25 +364,24 @@
         <!-- Data Table -->
         <div class="glass-card rounded-2xl shadow-xl overflow-hidden mb-8">
             <div class="p-6 border-b border-slate-200">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-slate-800 section-title">Order Items</h2>
-                    <span id="itemCount" class="status-badge text-white text-sm px-4 py-1 rounded-full">0 Items</span>
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-800 section-title">Order Items</h2>
+                        <p class="text-slate-500 text-sm mt-1">Double-click on column headers to edit names</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="itemCount" class="status-badge text-white text-sm px-4 py-1 rounded-full">0 Items</span>
+                        <button onclick="addManualRow()" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Add Row
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="overflow-x-auto scrollbar-thin">
                 <table class="w-full" id="dataTable">
-                    <thead class="table-header text-white">
-                        <tr>
-                            <th class="px-4 py-4 text-left text-sm font-semibold">Sl No</th>
-                            <th class="px-4 py-4 text-left text-sm font-semibold">Vendor Name</th>
-                            <th class="px-4 py-4 text-left text-sm font-semibold">Code</th>
-                            <th class="px-4 py-4 text-left text-sm font-semibold">Products Name</th>
-                            <th class="px-4 py-4 text-right text-sm font-semibold">CPU</th>
-                            <th class="px-4 py-4 text-right text-sm font-semibold">PO Qty</th>
-                            <th class="px-4 py-4 text-left text-sm font-semibold">Store</th>
-                            <th class="px-4 py-4 text-right text-sm font-semibold">PO Value</th>
-                            <th class="px-4 py-4 text-center text-sm font-semibold">Actions</th>
-                        </tr>
+                    <thead class="table-header text-white" id="tableHeader">
+                        <!-- Headers will be generated dynamically -->
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
                         <tr>
@@ -377,7 +391,11 @@
                                         <span class="text-4xl">📁</span>
                                     </div>
                                     <p class="text-slate-500 font-medium">No data available</p>
-                                    <p class="text-slate-400 text-sm mt-1">Upload an Excel file to get started</p>
+                                    <p class="text-slate-400 text-sm mt-1">Upload an Excel file or add rows manually</p>
+                                    <button onclick="addManualRow()" class="mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-2 rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        Add First Item
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -477,6 +495,17 @@
         let filteredData = [];
         let logoData = null;
         let signatureData = null;
+        let columnHeaders = {
+            'slNo': 'Sl No',
+            'vendorName': 'Vendor Name',
+            'code': 'Code',
+            'productsName': 'Products Name',
+            'cpu': 'CPU',
+            'poQty': 'PO Qty',
+            'storeName': 'Store',
+            'poValue': 'PO Value'
+        };
+        let editingHeader = null;
 
         // Store Details Mapping
         const storeDetails = {
@@ -517,6 +546,7 @@
             loadFromStorage();
             setDefaultDates();
             updateCurrentDate();
+            renderTableHeaders();
         });
 
         function updateCurrentDate() {
@@ -555,15 +585,26 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
-                allData = jsonData.map((row, index) => ({
-                    slNo: row['Sl No'] || index + 1,
-                    vendorName: row['Vendor Name'] || '',
-                    code: row['Code'] || '',
-                    productsName: row['Products Name'] || '',
-                    cpu: parseFloat(row['CPU']) || 0,
-                    poQty: parseFloat(row['PO Qty']) || 0,
-                    storeName: row['Store Name'] || ''
-                }));
+                // Process data with flexibility for column names
+                allData = jsonData.map((row, index) => {
+                    // Try to match columns with flexible names
+                    const vendorName = row['Vendor Name'] || row['Vendor'] || row['VendorName'] || row['Supplier'] || '';
+                    const code = row['Code'] || row['Product Code'] || row['SKU'] || row['Item Code'] || '';
+                    const productsName = row['Products Name'] || row['Product Name'] || row['Item'] || row['Description'] || '';
+                    const cpu = parseFloat(row['CPU']) || parseFloat(row['Unit Price']) || parseFloat(row['Price']) || 0;
+                    const poQty = parseFloat(row['PO Qty']) || parseFloat(row['Quantity']) || parseFloat(row['Qty']) || 0;
+                    const storeName = row['Store Name'] || row['Store'] || row['Location'] || '';
+
+                    return {
+                        slNo: row['Sl No'] || index + 1,
+                        vendorName: vendorName,
+                        code: code,
+                        productsName: productsName,
+                        cpu: cpu,
+                        poQty: poQty,
+                        storeName: storeName
+                    };
+                });
 
                 populateFilters();
                 applyFilters();
@@ -620,6 +661,112 @@
             saveToStorage();
         }
 
+        function renderTableHeaders() {
+            const thead = document.getElementById('tableHeader');
+            const columns = [
+                { key: 'slNo', name: columnHeaders.slNo, editable: false, align: 'left' },
+                { key: 'vendorName', name: columnHeaders.vendorName, editable: true, align: 'left' },
+                { key: 'code', name: columnHeaders.code, editable: true, align: 'left' },
+                { key: 'productsName', name: columnHeaders.productsName, editable: true, align: 'left' },
+                { key: 'cpu', name: columnHeaders.cpu, editable: true, align: 'right' },
+                { key: 'poQty', name: columnHeaders.poQty, editable: true, align: 'right' },
+                { key: 'storeName', name: columnHeaders.storeName, editable: true, align: 'left' },
+                { key: 'poValue', name: columnHeaders.poValue, editable: true, align: 'right' },
+                { key: 'actions', name: 'Actions', editable: false, align: 'center' }
+            ];
+
+            thead.innerHTML = `
+                <tr>
+                    ${columns.map(col => `
+                        <th class="px-4 py-4 text-${col.align} text-sm font-semibold ${col.editable ? 'editable-header' : ''}"
+                            ${col.editable ? `ondblclick="editHeader('${col.key}')"` : ''}>
+                            ${col.name}
+                        </th>
+                    `).join('')}
+                </tr>
+            `;
+        }
+
+        function editHeader(key) {
+            if (editingHeader) return;
+            
+            const th = document.querySelector(`th[ondblclick="editHeader('${key}')"]`);
+            if (!th) return;
+            
+            const originalText = th.textContent;
+            th.innerHTML = `
+                <input type="text" 
+                    value="${originalText}" 
+                    class="w-full px-2 py-1 bg-white text-slate-800 rounded border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    onkeydown="handleHeaderKeydown(event, '${key}')"
+                    onblur="saveHeaderEdit('${key}', this.value)">
+            `;
+            
+            editingHeader = key;
+            const input = th.querySelector('input');
+            input.focus();
+            input.select();
+        }
+
+        function handleHeaderKeydown(event, key) {
+            if (event.key === 'Enter') {
+                saveHeaderEdit(key, event.target.value);
+            } else if (event.key === 'Escape') {
+                cancelHeaderEdit(key);
+            }
+        }
+
+        function saveHeaderEdit(key, newName) {
+            if (key !== 'poValue') {
+                columnHeaders[key] = newName.trim() || columnHeaders[key];
+            }
+            editingHeader = null;
+            renderTableHeaders();
+            renderTable();
+            saveToStorage();
+        }
+
+        function cancelHeaderEdit(key) {
+            editingHeader = null;
+            renderTableHeaders();
+        }
+
+        function addManualRow() {
+            const newRow = {
+                slNo: filteredData.length + 1,
+                vendorName: '',
+                code: '',
+                productsName: '',
+                cpu: 0,
+                poQty: 0,
+                storeName: ''
+            };
+            
+            filteredData.push(newRow);
+            
+            // Update Sl No for all rows
+            filteredData = filteredData.map((item, index) => ({
+                ...item,
+                slNo: index + 1
+            }));
+            
+            // Also add to allData for persistence
+            allData.push({...newRow});
+            
+            renderTable();
+            calculateTotal();
+            saveToStorage();
+            
+            // Scroll to the new row
+            setTimeout(() => {
+                const tableBody = document.getElementById('tableBody');
+                const lastRow = tableBody.lastElementChild;
+                if (lastRow) {
+                    lastRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+        }
+
         function populateFilters() {
             const vendors = [...new Set(allData.map(item => item.vendorName))].filter(v => v);
             const stores = [...new Set(allData.map(item => item.storeName))].filter(s => s);
@@ -673,7 +820,11 @@
                                     <span class="text-4xl">📁</span>
                                 </div>
                                 <p class="text-slate-500 font-medium">No data available</p>
-                                <p class="text-slate-400 text-sm mt-1">Upload an Excel file to get started</p>
+                                <p class="text-slate-400 text-sm mt-1">Upload an Excel file or add rows manually</p>
+                                <button onclick="addManualRow()" class="mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-2 rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    Add First Item
+                                </button>
                             </div>
                         </td>
                     </tr>`;
@@ -686,32 +837,49 @@
                         <span class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-sm font-semibold text-slate-600">${item.slNo}</span>
                     </td>
                     <td class="px-4 py-4">
-                        <span class="font-medium text-slate-700">${item.vendorName}</span>
+                        <input type="text" value="${item.vendorName}" onchange="updateItem(${index}, 'vendorName', this.value)" 
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                            placeholder="Enter vendor name">
                     </td>
                     <td class="px-4 py-4">
                         <input type="text" value="${item.code}" onchange="updateItem(${index}, 'code', this.value)" 
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                            placeholder="Enter product code">
                     </td>
                     <td class="px-4 py-4">
                         <input type="text" value="${item.productsName}" onchange="updateItem(${index}, 'productsName', this.value)" 
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                            placeholder="Enter product name">
                     </td>
                     <td class="px-4 py-4">
                         <input type="number" value="${item.cpu}" onchange="updateItem(${index}, 'cpu', parseFloat(this.value) || 0)" 
-                            class="w-24 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" step="0.01">
+                            class="w-24 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
+                            step="0.01" min="0" placeholder="0.00">
                     </td>
                     <td class="px-4 py-4">
                         <input type="number" value="${item.poQty}" onchange="updateItem(${index}, 'poQty', parseFloat(this.value) || 0)" 
-                            class="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                            class="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                            min="0" placeholder="0">
                     </td>
                     <td class="px-4 py-4">
-                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">${item.storeName}</span>
+                        <select onchange="updateItem(${index}, 'storeName', this.value)" 
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                            <option value="" ${!item.storeName ? 'selected' : ''}>Select Store</option>
+                            <option value="NORP KNIT" ${item.storeName === 'NORP KNIT' ? 'selected' : ''}>NORP KNIT</option>
+                            <option value="ESL" ${item.storeName === 'ESL' ? 'selected' : ''}>ESL</option>
+                            <option value="ICCL" ${item.storeName === 'ICCL' ? 'selected' : ''}>ICCL</option>
+                            <option value="HA-MEEM" ${item.storeName === 'HA-MEEM' ? 'selected' : ''}>HA-MEEM</option>
+                            <option value="RUPSHI" ${item.storeName === 'RUPSHI' ? 'selected' : ''}>RUPSHI</option>
+                            <option value="GBAL" ${item.storeName === 'GBAL' ? 'selected' : ''}>GBAL</option>
+                            <option value="OTHER" ${item.storeName === 'OTHER' ? 'selected' : ''}>Other</option>
+                        </select>
                     </td>
                     <td class="px-4 py-4 text-right">
                         <span class="font-bold text-slate-800">${(item.cpu * item.poQty).toFixed(2)}</span>
                     </td>
                     <td class="px-4 py-4 text-center">
-                        <button onclick="deleteItem(${index})" class="w-9 h-9 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors flex items-center justify-center mx-auto">
+                        <button onclick="deleteItem(${index})" class="w-9 h-9 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors flex items-center justify-center mx-auto"
+                            title="Delete row">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </td>
@@ -725,10 +893,14 @@
             // Update in allData as well
             const originalIndex = allData.findIndex(item => 
                 item.vendorName === filteredData[index].vendorName && 
-                item.productsName === filteredData[index].productsName
+                item.productsName === filteredData[index].productsName &&
+                item.code === filteredData[index].code
             );
             if (originalIndex !== -1) {
                 allData[originalIndex][field] = value;
+            } else {
+                // If not found, push the updated item
+                allData.push({...filteredData[index]});
             }
 
             renderTable();
@@ -737,11 +909,27 @@
         }
 
         function deleteItem(index) {
-            filteredData.splice(index, 1);
-            filteredData = filteredData.map((item, i) => ({ ...item, slNo: i + 1 }));
-            renderTable();
-            calculateTotal();
-            saveToStorage();
+            if (confirm('Are you sure you want to delete this item?')) {
+                // Remove from filteredData
+                filteredData.splice(index, 1);
+                
+                // Update Sl No
+                filteredData = filteredData.map((item, i) => ({ ...item, slNo: i + 1 }));
+                
+                // Remove from allData if exists
+                const deletedItem = filteredData[index] || allData[index];
+                if (deletedItem) {
+                    allData = allData.filter(item => 
+                        !(item.vendorName === deletedItem.vendorName && 
+                          item.productsName === deletedItem.productsName &&
+                          item.code === deletedItem.code)
+                    );
+                }
+                
+                renderTable();
+                calculateTotal();
+                saveToStorage();
+            }
         }
 
         function calculateTotal() {
@@ -753,6 +941,11 @@
         }
 
         function generatePDF() {
+            if (filteredData.length === 0) {
+                alert('Please add some items to the table before generating PDF.');
+                return;
+            }
+            
             const previewContent = document.getElementById('pdfPreviewContent');
             const vendorName = document.getElementById('vendorFilter').value || 'All Vendors';
             const storeName = document.getElementById('mainStoreName').value || document.getElementById('storeFilter').value || '';
@@ -824,12 +1017,12 @@
                         <table class="w-full">
                             <thead class="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
                                 <tr>
-                                    <th class="px-4 py-4 text-left text-sm font-semibold">Sl No</th>
-                                    <th class="px-4 py-4 text-left text-sm font-semibold">Code</th>
-                                    <th class="px-4 py-4 text-left text-sm font-semibold">Products Name</th>
-                                    <th class="px-4 py-4 text-right text-sm font-semibold">CPU</th>
-                                    <th class="px-4 py-4 text-right text-sm font-semibold">PO Qty</th>
-                                    <th class="px-4 py-4 text-right text-sm font-semibold">PO Value</th>
+                                    <th class="px-4 py-4 text-left text-sm font-semibold">${columnHeaders.slNo}</th>
+                                    <th class="px-4 py-4 text-left text-sm font-semibold">${columnHeaders.code}</th>
+                                    <th class="px-4 py-4 text-left text-sm font-semibold">${columnHeaders.productsName}</th>
+                                    <th class="px-4 py-4 text-right text-sm font-semibold">${columnHeaders.cpu}</th>
+                                    <th class="px-4 py-4 text-right text-sm font-semibold">${columnHeaders.poQty}</th>
+                                    <th class="px-4 py-4 text-right text-sm font-semibold">${columnHeaders.poValue}</th>
                                 </tr>
                             </thead>
                             <tbody class="text-slate-700">
@@ -954,7 +1147,7 @@
 
             doc.autoTable({
                 startY: yPos,
-                head: [['Sl No', 'Code', 'Products Name', 'CPU', 'PO Qty', 'PO Value']],
+                head: [[columnHeaders.slNo, columnHeaders.code, columnHeaders.productsName, columnHeaders.cpu, columnHeaders.poQty, columnHeaders.poValue]],
                 body: tableData,
                 theme: 'grid',
                 headStyles: { 
@@ -1062,20 +1255,22 @@
                 filteredData = [];
                 logoData = null;
                 signatureData = null;
+                columnHeaders = {
+                    'slNo': 'Sl No',
+                    'vendorName': 'Vendor Name',
+                    'code': 'Code',
+                    'productsName': 'Products Name',
+                    'cpu': 'CPU',
+                    'poQty': 'PO Qty',
+                    'storeName': 'Store',
+                    'poValue': 'PO Value'
+                };
                 localStorage.removeItem('poToolData');
                 
-                document.getElementById('tableBody').innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-16">
-                            <div class="flex flex-col items-center">
-                                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 animate-float">
-                                    <span class="text-4xl">📁</span>
-                                </div>
-                                <p class="text-slate-500 font-medium">No data available</p>
-                                <p class="text-slate-400 text-sm mt-1">Upload an Excel file to get started</p>
-                            </div>
-                        </td>
-                    </tr>`;
+                renderTableHeaders();
+                renderTable();
+                calculateTotal();
+                
                 document.getElementById('totalPOValue').textContent = '0.00';
                 document.getElementById('totalItems').textContent = '0';
                 document.getElementById('totalQty').textContent = '0';
@@ -1089,6 +1284,8 @@
                 document.getElementById('storePersonName').value = '';
                 document.getElementById('storePersonPhone').value = '';
                 document.getElementById('mainStoreName').value = '';
+                document.getElementById('logoFile').value = '';
+                document.getElementById('signatureFile').value = '';
                 
                 alert('✅ All data cleared successfully!');
             } else if (code !== null) {
@@ -1102,6 +1299,7 @@
                 filteredData,
                 logoData,
                 signatureData,
+                columnHeaders,
                 poDate: document.getElementById('poDate').value,
                 deliveryDate: document.getElementById('deliveryDate').value,
                 referenceNo: document.getElementById('referenceNo').value,
@@ -1126,6 +1324,16 @@
                 filteredData = data.filteredData || [];
                 logoData = data.logoData;
                 signatureData = data.signatureData;
+                columnHeaders = data.columnHeaders || {
+                    'slNo': 'Sl No',
+                    'vendorName': 'Vendor Name',
+                    'code': 'Code',
+                    'productsName': 'Products Name',
+                    'cpu': 'CPU',
+                    'poQty': 'PO Qty',
+                    'storeName': 'Store',
+                    'poValue': 'PO Value'
+                };
 
                 if (data.poDate) document.getElementById('poDate').value = data.poDate;
                 if (data.deliveryDate) document.getElementById('deliveryDate').value = data.deliveryDate;
@@ -1151,6 +1359,7 @@
                     populateFilters();
                     if (data.vendorFilter) document.getElementById('vendorFilter').value = data.vendorFilter;
                     if (data.storeFilter) document.getElementById('storeFilter').value = data.storeFilter;
+                    renderTableHeaders();
                     renderTable();
                     calculateTotal();
                 }
