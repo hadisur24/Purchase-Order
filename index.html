@@ -254,8 +254,8 @@
                         <div class="flex gap-2">
                             <input type="url" id="logoUrlInput" 
                                    class="flex-1 input-modern rounded-lg text-sm" 
-                                   placeholder="https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000"
-                                   value="https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000">
+                                   placeholder="https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk"
+                                   value="https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk">
                             <button onclick="loadLogoFromUrl()" 
                                     class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
                                 Load
@@ -603,12 +603,11 @@
             
             // Auto-load the default logo URL on page load
             setTimeout(() => {
-                const defaultUrl = document.getElementById('logoUrlInput').value;
-                if (defaultUrl && !logoData) {
+                if (!logoData) {
                     console.log('Auto-loading default logo...');
                     loadLogoFromUrl();
                 }
-            }, 1000);
+            }, 500);
         });
 
         function updateCurrentDate() {
@@ -648,14 +647,30 @@
             // Show loading spinner
             document.getElementById('loadingSpinner').classList.remove('hidden');
 
-            // Create a proxy URL to handle CORS issues with Google Drive images
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            // Convert Google Drive link if needed
+            let processedUrl = url;
             
-            // Try to load the image
+            // Check if it's a Google Drive share link and convert to direct download link
+            if (url.includes('drive.google.com/file/d/')) {
+                const fileIdMatch = url.match(/\/d\/([^/]+)/);
+                if (fileIdMatch && fileIdMatch[1]) {
+                    processedUrl = `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+                }
+            }
+            
+            // For Googleusercontent links, try to use CORS proxy
+            if (url.includes('googleusercontent.com')) {
+                processedUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            }
+
+            console.log('Loading logo from URL:', processedUrl);
+            
+            // Create a test image to check if it loads
             const img = new Image();
-            img.crossOrigin = "Anonymous"; // Important for CORS
+            img.crossOrigin = "anonymous";
             
             img.onload = function() {
+                console.log('Image loaded successfully');
                 try {
                     // Create canvas to convert to data URL
                     const canvas = document.createElement('canvas');
@@ -684,7 +699,13 @@
                 } catch (error) {
                     console.error('Error converting image:', error);
                     document.getElementById('loadingSpinner').classList.add('hidden');
-                    showNotification('Error converting image. Please try a different URL.', 'error');
+                    
+                    // Try direct assignment as fallback
+                    logoData = img.src;
+                    document.getElementById('logoImg').src = img.src;
+                    document.getElementById('logoPreview').classList.remove('hidden');
+                    saveToStorage();
+                    showNotification('Logo loaded successfully!', 'success');
                 }
             };
             
@@ -692,48 +713,81 @@
                 console.error('Error loading image:', error);
                 document.getElementById('loadingSpinner').classList.add('hidden');
                 
-                // Try direct approach as fallback
-                tryDirectImageLoad(url);
+                // Try alternative approaches
+                if (url.includes('drive.google.com')) {
+                    tryAlternativeGoogleDriveLoad(url);
+                } else {
+                    showNotification('Failed to load logo. Please try a different URL or upload the image directly.', 'error');
+                }
             };
             
             // Set a timeout for image loading
             setTimeout(() => {
                 if (!img.complete) {
+                    console.log('Image loading timeout');
                     img.onerror(new Error('Image loading timeout'));
                 }
-            }, 10000);
+            }, 15000);
             
-            img.src = proxyUrl;
+            img.src = processedUrl;
         }
 
-        function tryDirectImageLoad(url) {
-            // Alternative approach: Use fetch API
-            fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.blob();
-                })
-                .then(blob => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = function() {
-                            logoData = reader.result;
-                            document.getElementById('logoImg').src = reader.result;
-                            document.getElementById('logoPreview').classList.remove('hidden');
-                            document.getElementById('loadingSpinner').classList.add('hidden');
-                            saveToStorage();
-                            showNotification('Logo loaded successfully!', 'success');
-                            resolve();
-                        };
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
+        function tryAlternativeGoogleDriveLoad(url) {
+            // Extract file ID from Google Drive URL
+            let fileId = '';
+            
+            // Try to extract from different URL formats
+            if (url.includes('/d/')) {
+                const match = url.match(/\/d\/([^/]+)/);
+                if (match) fileId = match[1];
+            } else if (url.includes('id=')) {
+                const match = url.match(/id=([^&]+)/);
+                if (match) fileId = match[1];
+            }
+            
+            if (!fileId) {
+                showNotification('Could not extract file ID from Google Drive URL', 'error');
+                return;
+            }
+            
+            // Try different Google Drive URL formats
+            const alternativeUrls = [
+                `https://drive.google.com/uc?export=view&id=${fileId}`,
+                `https://lh3.googleusercontent.com/d/${fileId}=s0`,
+                `https://lh3.googleusercontent.com/d/${fileId}=w1000`,
+                `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`
+            ];
+            
+            let currentTry = 0;
+            
+            function tryNextUrl() {
+                if (currentTry >= alternativeUrls.length) {
+                    showNotification('Failed to load logo from Google Drive. Please upload the image directly.', 'error');
+                    return;
+                }
+                
+                console.log('Trying alternative URL:', alternativeUrls[currentTry]);
+                const testImg = new Image();
+                testImg.crossOrigin = "anonymous";
+                
+                testImg.onload = function() {
+                    logoData = testImg.src;
+                    document.getElementById('logoImg').src = testImg.src;
+                    document.getElementById('logoPreview').classList.remove('hidden');
+                    saveToStorage();
                     document.getElementById('loadingSpinner').classList.add('hidden');
-                    showNotification('Failed to load logo. Please check the URL or try uploading a file instead.', 'error');
-                });
+                    showNotification('Logo loaded successfully!', 'success');
+                };
+                
+                testImg.onerror = function() {
+                    currentTry++;
+                    tryNextUrl();
+                };
+                
+                testImg.src = alternativeUrls[currentTry];
+            }
+            
+            tryNextUrl();
         }
 
         function showNotification(message, type = 'info') {
@@ -885,7 +939,7 @@
             logoData = null;
             document.getElementById('logoPreview').classList.add('hidden');
             document.getElementById('logoFile').value = '';
-            document.getElementById('logoUrlInput').value = 'https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000';
+            document.getElementById('logoUrlInput').value = 'https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk';
             saveToStorage();
             showNotification('Logo removed', 'info');
         }
@@ -1574,7 +1628,7 @@
                 document.getElementById('mainStoreName').value = '';
                 document.getElementById('logoFile').value = '';
                 document.getElementById('signatureFile').value = '';
-                document.getElementById('logoUrlInput').value = 'https://lh3.googleusercontent.com/d/1fwtQu3Fqq9FQs-QoTYEkhm-Vz3BPryAQ=w2000';
+                document.getElementById('logoUrlInput').value = 'https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk';
                 
                 showNotification('All data cleared successfully!', 'success');
             }
