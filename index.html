@@ -3,1766 +3,1401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PO Generation Tool - Professional</title>
+    <title>PO Generation Tool</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
-        .bg-po { background-color: #EFECE3; }
-        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .upload-card {
-            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .upload-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .input-modern {
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            transition: all 0.2s ease;
-        }
-        
-        .input-modern:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-            outline: none;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px -10px rgba(102, 126, 234, 0.5);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-        }
-        
-        .btn-purple {
-            background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
-        }
-        
-        .table-header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-        }
-        
-        .table-row:hover {
-            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-        }
-        
-        .status-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .total-card {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        }
-        
-        .modal-overlay {
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(8px);
-        }
-        
-        .animate-float {
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 10px;
-        }
-        
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
-        }
-
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
-        .section-title {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 40px;
-            height: 3px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 2px;
-        }
-        
-        .editable-header {
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .editable-header:hover::after {
-            content: '✏️';
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 12px;
-            opacity: 0.7;
-        }
-        
-        .url-input-container {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed #e2e8f0;
-        }
-        
-        .url-input-container input {
-            font-size: 12px;
-            padding: 6px 10px;
-        }
-        
-        .url-input-container button {
-            font-size: 12px;
-            padding: 6px 12px;
-        }
+        .gradient-bg { background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); }
+        .glass-card { background: rgba(255,255,255,0.97); backdrop-filter: blur(20px); border: 1px solid rgba(226,232,240,0.8); }
+        .upload-card { background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%); transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .upload-card:hover { transform: translateY(-3px); box-shadow: 0 16px 32px -8px rgba(0,0,0,0.12); }
+        .input-modern { background: #f8fafc; border: 2px solid #e2e8f0; transition: all 0.2s ease; }
+        .input-modern:focus { border-color: #2d5a87; box-shadow: 0 0 0 3px rgba(45,90,135,0.1); outline: none; }
+        .btn-primary { background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); transition: all 0.3s ease; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -6px rgba(30,58,95,0.45); }
+        .btn-green { background: linear-gradient(135deg, #059669 0%, #10b981 100%); transition: all 0.3s ease; }
+        .btn-green:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -6px rgba(5,150,105,0.4); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); }
+        .btn-purple { background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%); }
+        .btn-zip { background: linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%); }
+        .btn-orange { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); }
+        .table-header { background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); }
+        .table-row:hover { background: rgba(45,90,135,0.04); }
+        .status-badge { background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); }
+        .total-card { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+        .modal-overlay { background: rgba(10,20,40,0.72); backdrop-filter: blur(8px); }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        .scrollbar-thin::-webkit-scrollbar { width:5px; height:5px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background:#f1f5f9; border-radius:8px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background:#94a3b8; border-radius:8px; }
+        .icon-box { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; }
+        .section-title { position:relative; display:inline-block; }
+        .section-title::after { content:''; position:absolute; bottom:-4px; left:0; width:36px; height:2px; background:linear-gradient(135deg,#1e3a5f,#2d5a87); border-radius:2px; }
+        .editable-header { cursor:pointer; position:relative; }
+        .editable-header:hover::after { content:'✏️'; position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:11px; opacity:0.7; }
+        .url-input-container { margin-top:10px; padding-top:10px; border-top:1px dashed #e2e8f0; }
+        #zipProgressBar { transition: width 0.3s ease; }
+        @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen">
-    <!-- Header -->
-    <header class="gradient-bg text-white py-6 shadow-2xl">
-        <div class="container mx-auto px-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <span class="text-2xl">📋</span>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold tracking-tight">PO Generation Tool</h1>
-                        <p class="text-white/70 text-sm">Professional Purchase Order Management</p>
-                    </div>
+
+<!-- HEADER -->
+<header class="gradient-bg text-white py-5 shadow-2xl">
+    <div class="container mx-auto px-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                    <span class="text-2xl">📋</span>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span class="px-4 py-2 bg-white/10 rounded-full text-sm font-medium backdrop-blur-sm">
-                        <span id="currentDate"></span>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="container mx-auto px-6 py-8">
-        <!-- Upload Section -->
-        <div class="glass-card rounded-2xl shadow-xl p-6 mb-8">
-            <h2 class="text-lg font-semibold text-slate-800 mb-5 section-title">Upload Files</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                <!-- Excel Upload -->
-                <label class="upload-card rounded-xl p-5 cursor-pointer block border-2 border-transparent hover:border-blue-400">
-                    <div class="flex items-start gap-4">
-                        <div class="icon-box bg-blue-100 text-blue-600">📊</div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-slate-800">Excel File</h3>
-                            <p class="text-xs text-slate-500 mt-1">Upload .xlsx or .xls</p>
-                            <div class="mt-3 text-xs text-blue-600 font-medium flex items-center gap-1">
-                                <span>Browse Files</span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="file" id="excelFile" accept=".xlsx,.xls" class="hidden" onchange="processExcel(event)">
-                </label>
-
-                <!-- PDF Upload -->
-                <label class="upload-card rounded-xl p-5 cursor-pointer block border-2 border-transparent hover:border-red-400">
-                    <div class="flex items-start gap-4">
-                        <div class="icon-box bg-red-100 text-red-600">📄</div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-slate-800">PDF File</h3>
-                            <p class="text-xs text-slate-500 mt-1">Upload existing PO</p>
-                            <div class="mt-3 text-xs text-red-600 font-medium flex items-center gap-1">
-                                <span>Browse Files</span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="file" id="pdfFile" accept=".pdf" class="hidden" onchange="processPDF(event)">
-                </label>
-
-                <!-- Logo Upload -->
-                <div class="upload-card rounded-xl p-5 border-2 border-transparent hover:border-purple-400">
-                    <div class="flex items-start gap-4">
-                        <div class="icon-box bg-purple-100 text-purple-600">🖼️</div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-slate-800">Company Logo</h3>
-                            <p class="text-xs text-slate-500 mt-1">PNG, JPG for PDF</p>
-                            <label class="mt-3 text-xs text-purple-600 font-medium flex items-center gap-1 cursor-pointer">
-                                <span>Browse Files</span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </label>
-                            <input type="file" id="logoFile" accept="image/*" class="hidden" onchange="uploadLogo(event)">
-                        </div>
-                    </div>
-                    
-                    <!-- Direct URL Input Section -->
-                    <div class="url-input-container">
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Or enter logo URL:</label>
-                        <div class="flex gap-2">
-                            <input type="url" id="logoUrlInput" 
-                                   class="flex-1 input-modern rounded-lg text-sm" 
-                                   placeholder="https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk"
-                                   value="https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk">
-                            <button onclick="loadLogoFromUrl()" 
-                                    class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-                                Load
-                            </button>
-                        </div>
-                        <p class="text-xs text-slate-400 mt-1">Press Enter or click Load to use the URL</p>
-                    </div>
-                </div>
-
-                <!-- Signature Upload -->
-                <label class="upload-card rounded-xl p-5 cursor-pointer block border-2 border-transparent hover:border-amber-400">
-                    <div class="flex items-start gap-4">
-                        <div class="icon-box bg-amber-100 text-amber-600">✍️</div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-slate-800">Signature</h3>
-                            <p class="text-xs text-slate-500 mt-1">Authorized signature</p>
-                            <div class="mt-3 text-xs text-amber-600 font-medium flex items-center gap-1">
-                                <span>Browse Files</span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="file" id="signatureFile" accept="image/*" class="hidden" onchange="uploadSignature(event)">
-                </label>
-            </div>
-
-            <!-- Preview Images -->
-            <div class="flex flex-wrap gap-6 mt-6" id="previewSection">
-                <div id="logoPreview" class="hidden">
-                    <p class="text-xs font-medium text-slate-600 mb-2">Logo Preview</p>
-                    <div class="relative">
-                        <img id="logoImg" class="h-20 object-contain rounded-lg border-2 border-slate-200 bg-white p-2">
-                        <button onclick="removeLogo()" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600">×</button>
-                    </div>
-                </div>
-                <div id="signaturePreview" class="hidden">
-                    <p class="text-xs font-medium text-slate-600 mb-2">Signature Preview</p>
-                    <div class="relative">
-                        <img id="signatureImg" class="h-20 object-contain rounded-lg border-2 border-slate-200 bg-white p-2">
-                        <button onclick="removeSignature()" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600">×</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filters & PO Details -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <!-- Filters Card -->
-            <div class="glass-card rounded-2xl shadow-xl p-6">
-                <h2 class="text-lg font-semibold text-slate-800 mb-5 section-title">Filters</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-2">Vendor</label>
-                        <select id="vendorFilter" class="w-full input-modern rounded-xl px-4 py-3" onchange="applyFilters()">
-                            <option value="">All Vendors</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-2">Store</label>
-                        <select id="storeFilter" class="w-full input-modern rounded-xl px-4 py-3" onchange="applyFilters()">
-                            <option value="">All Stores</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PO Details Card -->
-            <div class="glass-card rounded-2xl shadow-xl p-6 lg:col-span-2">
-                <h2 class="text-lg font-semibold text-slate-800 mb-5 section-title">PO Details</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-2">PO Date</label>
-                        <input type="date" id="poDate" class="w-full input-modern rounded-xl px-4 py-3">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-2">Delivery Date</label>
-                        <input type="date" id="deliveryDate" class="w-full input-modern rounded-xl px-4 py-3">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-600 mb-2">Reference No</label>
-                        <input type="text" id="referenceNo" class="w-full input-modern rounded-xl px-4 py-3" placeholder="PO-2025-001">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Store & Delivery Details -->
-        <div class="glass-card rounded-2xl shadow-xl p-6 mb-8">
-            <h2 class="text-lg font-semibold text-slate-800 mb-5 section-title">Store & Delivery Information</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Main Store Name</label>
-                    <select id="mainStoreName" class="w-full input-modern rounded-xl px-4 py-3" onchange="updateStoreDetails()">
-                        <option value="">Select Store</option>
-                        <option value="NORP KNIT">NORP KNIT</option>
-                        <option value="ESL">ESL</option>
-                        <option value="ICCL">ICCL</option>
-                        <option value="HA-MEEM">HA-MEEM</option>
-                        <option value="RUPSHI">RUPSHI</option>
-                        <option value="GBAL">GBAL</option>
-                        <option value="MONDOL">MONDOL</option>
-                        <option value="OTHER">Other</option>
+                    <h1 class="text-xl font-bold tracking-tight">PO Generation Tool</h1>
+                    <p class="text-white/60 text-xs">Professional Purchase Order Management</p>
+                </div>
+            </div>
+            <span class="px-3 py-1.5 bg-white/10 rounded-full text-xs font-medium backdrop-blur-sm" id="currentDate"></span>
+        </div>
+    </div>
+</header>
+
+<div class="container mx-auto px-6 py-7">
+
+    <!-- UPLOAD -->
+    <div class="glass-card rounded-2xl shadow-lg p-6 mb-6">
+        <h2 class="text-base font-semibold text-slate-800 mb-4 section-title">Upload Files</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <label class="upload-card rounded-xl p-4 cursor-pointer block border-2 border-transparent hover:border-blue-400">
+                <div class="flex items-start gap-3">
+                    <div class="icon-box bg-blue-50 text-blue-600">📊</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-slate-800 text-sm">Excel File</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Upload .xlsx or .xls</p>
+                        <div class="mt-2 text-xs text-blue-600 font-medium flex items-center gap-1">
+                            <span>Browse Files</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="excelFile" accept=".xlsx,.xls" class="hidden" onchange="processExcel(event)">
+            </label>
+
+            <label class="upload-card rounded-xl p-4 cursor-pointer block border-2 border-transparent hover:border-red-400">
+                <div class="flex items-start gap-3">
+                    <div class="icon-box bg-red-50 text-red-600">📄</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-slate-800 text-sm">PDF File</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Upload existing PO</p>
+                        <div class="mt-2 text-xs text-red-600 font-medium flex items-center gap-1">
+                            <span>Browse Files</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="pdfFile" accept=".pdf" class="hidden" onchange="processPDF(event)">
+            </label>
+
+            <div class="upload-card rounded-xl p-4 border-2 border-transparent hover:border-purple-400">
+                <div class="flex items-start gap-3">
+                    <div class="icon-box bg-purple-50 text-purple-600">🖼️</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-slate-800 text-sm">Company Logo</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">PNG, JPG for PDF</p>
+                        <label class="mt-2 text-xs text-purple-600 font-medium flex items-center gap-1 cursor-pointer">
+                            <span>Browse Files</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <input type="file" id="logoFile" accept="image/*" class="hidden" onchange="uploadLogo(event)">
+                        </label>
+                    </div>
+                </div>
+                <div class="url-input-container">
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Or enter logo URL:</label>
+                    <div class="flex gap-2">
+                        <input type="url" id="logoUrlInput" class="flex-1 input-modern rounded-lg text-xs px-2 py-1.5"
+                            placeholder="https://drive.google.com/uc?export=view&id=..."
+                            value="https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk">
+                        <button onclick="loadLogoFromUrl()" class="bg-purple-600 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors">Load</button>
+                    </div>
+                </div>
+            </div>
+
+            <label class="upload-card rounded-xl p-4 cursor-pointer block border-2 border-transparent hover:border-amber-400">
+                <div class="flex items-start gap-3">
+                    <div class="icon-box bg-amber-50 text-amber-600">✍️</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-slate-800 text-sm">Signature</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Authorized signature</p>
+                        <div class="mt-2 text-xs text-amber-600 font-medium flex items-center gap-1">
+                            <span>Browse Files</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="signatureFile" accept="image/*" class="hidden" onchange="uploadSignature(event)">
+            </label>
+        </div>
+
+        <div class="flex flex-wrap gap-5 mt-5">
+            <div id="logoPreview" class="hidden">
+                <p class="text-xs font-medium text-slate-500 mb-1">Logo Preview</p>
+                <div class="relative">
+                    <img id="logoImg" class="h-16 object-contain rounded-lg border border-slate-200 bg-white p-1.5">
+                    <button onclick="removeLogo()" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center">×</button>
+                </div>
+            </div>
+            <div id="signaturePreview" class="hidden">
+                <p class="text-xs font-medium text-slate-500 mb-1">Signature Preview</p>
+                <div class="relative">
+                    <img id="signatureImg" class="h-16 object-contain rounded-lg border border-slate-200 bg-white p-1.5">
+                    <button onclick="removeSignature()" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center">×</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS + PO DETAILS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+        <div class="glass-card rounded-2xl shadow-lg p-6">
+            <h2 class="text-base font-semibold text-slate-800 mb-4 section-title">Filters</h2>
+            <div class="space-y-3 mt-5">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1.5">Vendor</label>
+                    <select id="vendorFilter" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" onchange="applyFilters()">
+                        <option value="">All Vendors</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Store Person's Name</label>
-                    <input type="text" id="storePersonName" class="w-full input-modern rounded-xl px-4 py-3" placeholder="Enter name">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Store Person's Phone</label>
-                    <input type="text" id="storePersonPhone" class="w-full input-modern rounded-xl px-4 py-3" placeholder="+880XXXXXXXXXX">
-                </div>
-                <div class="md:col-span-2 lg:col-span-1">
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Delivery Address</label>
-                    <input type="text" id="deliveryAddress" class="w-full input-modern rounded-xl px-4 py-3" placeholder="Enter delivery address">
+                    <label class="block text-xs font-medium text-slate-500 mb-1.5">Store</label>
+                    <select id="storeFilter" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" onchange="applyFilters()">
+                        <option value="">All Stores</option>
+                    </select>
                 </div>
             </div>
         </div>
 
-        <!-- Contact Person Details -->
-        <div class="glass-card rounded-2xl shadow-xl p-6 mb-8">
-            <h2 class="text-lg font-semibold text-slate-800 mb-5 section-title">Contact Person Details</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="glass-card rounded-2xl shadow-lg p-6 lg:col-span-2">
+            <h2 class="text-base font-semibold text-slate-800 mb-4 section-title">PO Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Contact Name</label>
-                    <input type="text" id="contactName" class="w-full input-modern rounded-xl px-4 py-3" value="Md Hadisur Rahman">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Contact Phone</label>
-                    <input type="text" id="contactPhone" class="w-full input-modern rounded-xl px-4 py-3" value="+8801329732463">
+                    <label class="block text-xs font-medium text-slate-500 mb-1.5">PO Date</label>
+                    <input type="date" id="poDate" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Contact Email</label>
-                    <input type="email" id="contactEmail" class="w-full input-modern rounded-xl px-4 py-3" value="hadisur.rahman@roshodfps.com">
+                    <label class="block text-xs font-medium text-slate-500 mb-1.5">Delivery Date</label>
+                    <input type="date" id="deliveryDate" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm">
                 </div>
-            </div>
-        </div>
-
-        <!-- Data Table -->
-        <div class="glass-card rounded-2xl shadow-xl overflow-hidden mb-8">
-            <div class="p-6 border-b border-slate-200">
-                <div class="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-lg font-semibold text-slate-800 section-title">Order Items</h2>
-                        <p class="text-slate-500 text-sm mt-1">Double-click on column headers to edit names</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span id="itemCount" class="status-badge text-white text-sm px-4 py-1 rounded-full">0 Items</span>
-                        <button onclick="addManualRow()" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                            Add Row
-                        </button>
-                    </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1.5">Reference No
+                        <button onclick="generateRefNo()" class="ml-1 text-blue-600 hover:text-blue-800 text-xs font-normal underline">Auto-generate</button>
+                    </label>
+                    <input type="text" id="referenceNo" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" placeholder="PO-2025-001">
                 </div>
-            </div>
-            <div class="overflow-x-auto scrollbar-thin">
-                <table class="w-full" id="dataTable">
-                    <thead class="table-header text-white" id="tableHeader">
-                        <!-- Headers will be generated dynamically -->
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="9" class="text-center py-16">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 animate-float">
-                                        <span class="text-4xl">📁</span>
-                                    </div>
-                                    <p class="text-slate-500 font-medium">No data available</p>
-                                    <p class="text-slate-400 text-sm mt-1">Upload an Excel file or add rows manually</p>
-                                    <button onclick="addManualRow()" class="mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-2 rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Add First Item
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Total PO Value -->
-        <div class="total-card rounded-2xl shadow-xl p-6 mb-8">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <span class="text-3xl">💰</span>
-                    </div>
-                    <div>
-                        <p class="text-white/80 text-sm font-medium">Total Purchase Order Value</p>
-                        <p class="text-white text-3xl font-bold"><span id="totalPOValue">0.00</span></p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-white/60 text-xs">Items: <span id="totalItems">0</span></p>
-                    <p class="text-white/60 text-xs">Qty: <span id="totalQty">0</span></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="glass-card rounded-2xl shadow-xl p-6 mb-8">
-            <div class="flex flex-wrap gap-4 justify-center">
-                <button onclick="generatePDF()" class="btn-primary text-white px-8 py-4 rounded-xl font-semibold flex items-center gap-3 shadow-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    Generate PO Order
-                </button>
-                <button onclick="downloadTemplate()" class="btn-secondary text-white px-8 py-4 rounded-xl font-semibold flex items-center gap-3 shadow-lg hover:transform hover:-translate-y-1 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Download Template
-                </button>
-                <a href="https://drive.google.com/drive/u/7/folders/1HtjXC5o4_DlRQE8KlqZ4CLM7w1hdWxn2" target="_blank" class="btn-purple text-white px-8 py-4 rounded-xl font-semibold flex items-center gap-3 shadow-lg hover:transform hover:-translate-y-1 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                    Asset Downloads
-                </a>
-                <button onclick="clearData()" class="btn-danger text-white px-8 py-4 rounded-xl font-semibold flex items-center gap-3 shadow-lg hover:transform hover:-translate-y-1 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    Clear Data
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="gradient-bg text-white py-8 mt-12">
-        <div class="container mx-auto px-6">
-            <div class="text-center">
-                <p class="text-white/80 text-sm">
-                    © 2025 DreamInovation. All rights reserved. Operated by 
-                    <a href="https://www.linkedin.com/in/md-hadisur-rahman24/" target="_blank" 
-                       class="font-semibold text-white hover:underline">Hadisur Rahman</a>
-                </p>
+    <!-- STORE & DELIVERY -->
+    <div class="glass-card rounded-2xl shadow-lg p-6 mb-6">
+        <h2 class="text-base font-semibold text-slate-800 mb-4 section-title">Store & Delivery Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Main Store Name</label>
+                <select id="mainStoreName" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" onchange="updateStoreDetails()">
+                    <option value="">Select Store</option>
+                    <option value="NORP KNIT">NORP KNIT</option>
+                    <option value="ESL">ESL</option>
+                    <option value="ICCL">ICCL</option>
+                    <option value="HA-MEEM">HA-MEEM</option>
+                    <option value="RUPSHI">RUPSHI</option>
+                    <option value="GBAL">GBAL</option>
+                    <option value="MONDOL">MONDOL</option>
+                    <option value="OTHER">Other</option>
+                </select>
             </div>
-        </div>
-    </footer>
-
-    <!-- PDF Preview Modal -->
-    <div id="pdfModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div class="sticky top-0 bg-white p-5 border-b border-slate-200 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <span class="text-xl">📄</span>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-800">PDF Preview</h2>
-                        <p class="text-slate-500 text-sm">Review your purchase order</p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="downloadPDF()" class="btn-secondary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        Download PDF
-                    </button>
-                    <button onclick="printPDF()" class="btn-primary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                        Print
-                    </button>
-                    <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-xl font-semibold transition-colors">
-                        Close
-                    </button>
-                </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Store Person's Name</label>
+                <input type="text" id="storePersonName" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" placeholder="Enter name">
             </div>
-            <div id="pdfPreviewContent" class="p-8 bg-po overflow-auto max-h-[calc(90vh-100px)] scrollbar-thin"></div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Store Person's Phone</label>
+                <input type="text" id="storePersonPhone" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" placeholder="+880XXXXXXXXXX">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Delivery Address</label>
+                <input type="text" id="deliveryAddress" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" placeholder="Enter delivery address">
+            </div>
         </div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
-            <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-slate-700 font-medium">Loading logo from URL...</p>
+    <!-- CONTACT -->
+    <div class="glass-card rounded-2xl shadow-lg p-6 mb-6">
+        <h2 class="text-base font-semibold text-slate-800 mb-4 section-title">Contact Person Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Contact Name</label>
+                <input type="text" id="contactName" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" value="Md Hadisur Rahman">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Contact Phone</label>
+                <input type="text" id="contactPhone" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" value="+8801329732463">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">Contact Email</label>
+                <input type="email" id="contactEmail" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" value="hadisur.rahman@roshodfps.com">
+            </div>
         </div>
     </div>
 
-    <script>
-        let allData = [];
-        let filteredData = [];
-        let logoData = null;
-        let signatureData = null;
-        let columnHeaders = {
-            'slNo': 'Sl No',
-            'vendorName': 'Vendor Name',
-            'code': 'Code',
-            'productsName': 'Products Name',
-            'cpu': 'CPU',
-            'poQty': 'PO Qty',
-            'storeName': 'Store',
-            'poValue': 'PO Value'
+    <!-- DATA TABLE -->
+    <div class="glass-card rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div class="p-5 border-b border-slate-100">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-semibold text-slate-800 section-title">Order Items</h2>
+                    <p class="text-slate-400 text-xs mt-1">Double-click column headers to rename</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="itemCount" class="status-badge text-white text-xs px-3 py-1 rounded-full">0 Items</span>
+                    <button onclick="addManualRow()" class="btn-green text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:opacity-90 transition-opacity">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Row
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="overflow-x-auto scrollbar-thin">
+            <table class="w-full" id="dataTable">
+                <thead class="table-header text-white" id="tableHeader"></thead>
+                <tbody id="tableBody" class="divide-y divide-slate-50">
+                    <tr><td colspan="9" class="text-center py-14">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3 animate-float"><span class="text-3xl">📁</span></div>
+                            <p class="text-slate-500 font-medium text-sm">No data available</p>
+                            <p class="text-slate-400 text-xs mt-1">Upload an Excel file or add rows manually</p>
+                        </div>
+                    </td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TOTAL -->
+    <div class="total-card rounded-2xl shadow-lg p-5 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"><span class="text-2xl">💰</span></div>
+                <div>
+                    <p class="text-white/75 text-xs font-medium">Total Purchase Order Value</p>
+                    <p class="text-white text-2xl font-bold"><span id="totalPOValue">0.00</span></p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-white/60 text-xs">Items: <span id="totalItems">0</span></p>
+                <p class="text-white/60 text-xs">Qty: <span id="totalQty">0</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="glass-card rounded-2xl shadow-lg p-5 mb-6">
+        <div class="flex flex-wrap gap-3 justify-center">
+            <button onclick="generatePDF()" class="btn-primary text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Generate PO Order
+            </button>
+            <button onclick="downloadTemplate()" class="btn-green text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow text-sm hover:opacity-90 transition-opacity">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download Template
+            </button>
+            <button onclick="openZipModal()" class="btn-zip text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow text-sm hover:opacity-90 transition-opacity">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download ZIP
+            </button>
+            <a href="https://drive.google.com/drive/u/7/folders/1HtjXC5o4_DlRQE8KlqZ4CLM7w1hdWxn2" target="_blank" class="btn-purple text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow text-sm hover:opacity-90 transition-opacity">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                Asset Downloads
+            </a>
+            <button onclick="clearData()" class="btn-danger text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow text-sm hover:opacity-90 transition-opacity">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Clear Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="gradient-bg text-white py-6 mt-8">
+    <div class="container mx-auto px-6 text-center">
+        <p class="text-white/70 text-sm">© 2025 DreamInovation. All rights reserved. Operated by
+            <a href="https://www.linkedin.com/in/md-hadisur-rahman24/" target="_blank" class="font-semibold text-white hover:underline">Hadisur Rahman</a>
+        </p>
+    </div>
+</footer>
+
+<!-- PDF PREVIEW MODAL -->
+<div id="pdfModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl flex flex-col">
+        <div class="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center"><span class="text-lg">📄</span></div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">PDF Preview</h2>
+                    <p class="text-slate-400 text-xs">Review your purchase order</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="downloadPDF()" class="btn-green text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-1.5 text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download
+                </button>
+                <button onclick="printPDF()" class="btn-primary text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-1.5 text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Print
+                </button>
+                <button onclick="closeModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl font-semibold text-sm transition-colors">Close</button>
+            </div>
+        </div>
+        <div id="pdfPreviewContent" class="overflow-auto flex-1 scrollbar-thin bg-slate-50 p-4"></div>
+    </div>
+</div>
+
+<!-- ZIP MODAL -->
+<div id="zipModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+        <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center"><span class="text-lg">🗜️</span></div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">ZIP Download</h2>
+                    <p class="text-slate-400 text-xs">All vendor POs grouped by store</p>
+                </div>
+            </div>
+            <button onclick="closeZipModal()" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-bold transition-colors flex items-center justify-center">×</button>
+        </div>
+        <div class="p-5">
+            <div class="mb-4">
+                <label class="block text-xs font-semibold text-slate-600 mb-2">Select Stores to Include</label>
+                <div id="zipStoreList" class="space-y-2 max-h-52 overflow-y-auto scrollbar-thin pr-0.5"></div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-slate-500 mb-1.5">ZIP File Name</label>
+                <input type="text" id="zipFileName" class="w-full input-modern rounded-xl px-3 py-2.5 text-sm" placeholder="PO_Bundle">
+            </div>
+            <div id="zipProgressContainer" class="hidden mb-4">
+                <div class="flex justify-between text-xs text-slate-500 mb-1">
+                    <span id="zipProgressLabel">Generating PDFs...</span>
+                    <span id="zipProgressPercent">0%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5">
+                    <div id="zipProgressBar" class="bg-gradient-to-r from-blue-500 to-sky-400 h-2.5 rounded-full" style="width:0%"></div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="downloadZip()" id="zipDownloadBtn" class="btn-zip text-white flex-1 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 text-sm hover:opacity-90 transition-opacity">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download ZIP
+                </button>
+                <button onclick="closeZipModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-7 rounded-2xl shadow-2xl flex flex-col items-center gap-3">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-slate-700 font-medium text-sm" id="spinnerMsg">Loading...</p>
+    </div>
+</div>
+
+<script>
+/* ================================================
+   STATE
+   ================================================ */
+let allData = [];
+let filteredData = [];
+let logoData = null;
+let signatureData = null;
+let columnHeaders = {
+    slNo:'Sl No', vendorName:'Vendor Name', code:'Code',
+    productsName:'Products Name', cpu:'CPU', poQty:'PO Qty',
+    storeName:'Store', poValue:'PO Value'
+};
+let editingHeader = null;
+
+/* ================================================
+   STORE DETAILS
+   ================================================ */
+const storeDetails = {
+    'NORP KNIT':{ address:'Norp Knit Industries Ltd. Unit 02, Shi-152/2, Islampur, Kodda, Nandun, Bason, Gazipur-1700, Bangladesh', person:'Afridi', phone:'+8801936711532' },
+    'ESL':       { address:'SHOP-2 Everbright Sweaters Ltd., Kathgora - Mridhabari Rd, Zirabo 1341', person:'Razib', phone:'+8801338358393' },
+    'ICCL':      { address:'SHOP-3 International Classic Composite Ltd. Naojur, Kodda, Joydebpur, Gazipur', person:'Pritom', phone:'+8801614149002' },
+    'HA-MEEM':   { address:'SHOP-4 Ha-Meem (Creative Collections Ltd.) 69 & 107, Mil Gate, Iztema Gate, Nishat Nagar, Tongi', person:'Sourav', phone:'+8801620220106' },
+    'RUPSHI':    { address:'SHOP-5 Rupshi Complex, City Economic Zone, Rupshi, Rupganj, Narayanganj', person:'Riazul Islam', phone:'+8801621083113' },
+    'GBAL':      { address:'SHOP-6 Good Bags & Accessories Ltd., Jadurchar Rd, Hemayetpur, Savar, Dhaka', person:'Sajib', phone:'+8801797258811' },
+    'MONDOL':    { address:'SHOP-7 MONDOL FABRICS LTD.(Knit Composite) Nayapara, Kashimpur, Gazipur', person:'Anas Rahman', phone:'+8801799470251' }
+};
+
+/* ================================================
+   HELPERS
+   ================================================ */
+function todayStr() {
+    return new Date().toISOString().split('T')[0];
+}
+function plusDaysStr(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+}
+function monthAbbr(date) {
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    return months[date.getMonth()];
+}
+
+/* FIX: Auto-generate ref no — sequential counter per day */
+function generateRefNo() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const dateKey = `${y}${m}${d}`;
+    // Get/increment daily counter from localStorage
+    let counter = parseInt(localStorage.getItem('poRefCounter_'+dateKey)||'0') + 1;
+    localStorage.setItem('poRefCounter_'+dateKey, String(counter));
+    const ref = `PO-${dateKey}-${String(counter).padStart(3,'0')}`;
+    document.getElementById('referenceNo').value = ref;
+    saveToStorage();
+    return ref;
+}
+
+/* FIX: File name format — REF_STORE_VENDOR_MONTH */
+function buildFileName(refNo, storeName, vendorName) {
+    const now = new Date();
+    const month = monthAbbr(now);
+    const safe = s => (s||'UNKNOWN').replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+    return `${safe(refNo)}_${safe(storeName)}_${safe(vendorName)}_${month}`;
+}
+
+/* ================================================
+   INIT
+   ================================================ */
+document.addEventListener('DOMContentLoaded', function() {
+    loadFromStorage();
+    // Always set PO date to today, delivery +7 on every load
+    document.getElementById('poDate').value = todayStr();
+    document.getElementById('deliveryDate').value = plusDaysStr(7);
+    updateCurrentDate();
+    renderTableHeaders();
+    // Auto-generate ref if empty
+    if (!document.getElementById('referenceNo').value) generateRefNo();
+    document.getElementById('logoUrlInput').addEventListener('keypress', e => { if(e.key==='Enter') loadLogoFromUrl(); });
+    setTimeout(() => { if (!logoData) loadLogoFromUrl(); }, 500);
+});
+
+function updateCurrentDate() {
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+}
+
+function updateStoreDetails() {
+    const store = document.getElementById('mainStoreName').value;
+    if (storeDetails[store]) {
+        document.getElementById('deliveryAddress').value = storeDetails[store].address;
+        document.getElementById('storePersonName').value = storeDetails[store].person;
+        document.getElementById('storePersonPhone').value = storeDetails[store].phone;
+    }
+    saveToStorage();
+}
+
+/* ================================================
+   LOGO LOADING
+   ================================================ */
+function loadLogoFromUrl() {
+    const url = document.getElementById('logoUrlInput').value.trim();
+    if (!url) { alert('Please enter a logo URL'); return; }
+    document.getElementById('loadingSpinner').classList.remove('hidden');
+    let processedUrl = url;
+    if (url.includes('drive.google.com/file/d/')) {
+        const m = url.match(/\/d\/([^/]+)/);
+        if (m) processedUrl = `https://drive.google.com/uc?export=view&id=${m[1]}`;
+    }
+    if (url.includes('googleusercontent.com')) processedUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+        try {
+            const c = document.createElement('canvas');
+            c.width = img.width; c.height = img.height;
+            c.getContext('2d').drawImage(img,0,0);
+            logoData = c.toDataURL('image/png');
+        } catch(e) { logoData = img.src; }
+        document.getElementById('logoImg').src = logoData;
+        document.getElementById('logoPreview').classList.remove('hidden');
+        document.getElementById('loadingSpinner').classList.add('hidden');
+        saveToStorage();
+        showNotification('Logo loaded successfully!','success');
+    };
+    img.onerror = function() {
+        document.getElementById('loadingSpinner').classList.add('hidden');
+        if (url.includes('drive.google.com')) tryAltGDrive(url);
+        else showNotification('Failed to load logo. Try a different URL or upload directly.','error');
+    };
+    setTimeout(() => { if(!img.complete) img.onerror(new Error('timeout')); }, 15000);
+    img.src = processedUrl;
+}
+function tryAltGDrive(url) {
+    let id = '';
+    if (url.includes('/d/')) { const m=url.match(/\/d\/([^/]+)/); if(m) id=m[1]; }
+    else if (url.includes('id=')) { const m=url.match(/id=([^&]+)/); if(m) id=m[1]; }
+    if (!id) { showNotification('Could not extract Google Drive file ID','error'); return; }
+    const urls = [
+        `https://drive.google.com/uc?export=view&id=${id}`,
+        `https://lh3.googleusercontent.com/d/${id}=s0`,
+        `https://drive.google.com/thumbnail?id=${id}&sz=w1000`
+    ];
+    let i=0;
+    function tryNext() {
+        if (i>=urls.length) { showNotification('Failed to load from Google Drive. Upload directly.','error'); return; }
+        const t = new Image(); t.crossOrigin='anonymous';
+        t.onload = function() {
+            logoData = t.src;
+            document.getElementById('logoImg').src = t.src;
+            document.getElementById('logoPreview').classList.remove('hidden');
+            saveToStorage();
+            document.getElementById('loadingSpinner').classList.add('hidden');
+            showNotification('Logo loaded!','success');
         };
-        let editingHeader = null;
+        t.onerror = function() { i++; tryNext(); };
+        t.src = urls[i];
+    }
+    tryNext();
+}
 
-        // Store Details Mapping
-        const storeDetails = {
-            'NORP KNIT': {
-                address: 'Norp Knit Industries Ltd. Unit 02, Shi-152/2, Islampur, Kodda, Nandun, Bason, Gazipur -1700, Bangladesh',
-                person: 'Pritom',
-                phone: '+8801614149002'
-            },
-            'ESL': {
-                address: 'SHOP-2 Everbright Sweaters Ltd., Kathgora - Mridhabari Rd, Zirabo 1341',
-                person: 'Razib',
-                phone: '+8801338358393'
-            },
-            'ICCL': {
-                address: 'SHOP-3 International Classic Composite Ltd. Naojur, Kodda, Joydebpur, Gazipur',
-                person: 'Mobarok',
-                phone: '+8801994738942'
-            },
-            'HA-MEEM': {
-                address: 'SHOP-4 Ha-Meem (Creative Collections Ltd.)69 & 107, Mil Gate, Iztema Gate, Nishat Nagar, Tongi',
-                person: 'Sourav',
-                phone: '+8801620220106'
-            },
-            'RUPSHI': {
-                address: 'SHOP -5 Rupshi Complex, City Economic Zone, Rupshi ,Rupganj, Narayanganj',
-                person: 'Riazul Islam',
-                phone: '+8801621083113'
-            },
-            'GBAL': {
-                address: 'SHOP -6 Good Bags & Accessories Ltd., Jadurchar Rd, Hemayetpur, Savar, Dhaka',
-                person: 'Sajib',
-                phone: '+8801797258811'
-            },
-            'MONDOL': {
-                address: 'SHOP-7 MONDOL FABRICS LTD.(Knit Composite) Nayapara,Kashimpur,Gazipur',
-                person: 'Anas Rahman',
-                phone: '+8801799470251'
-            }
-        };
+/* ================================================
+   NOTIFICATIONS
+   ================================================ */
+function showNotification(msg, type='info') {
+    const ex = document.querySelector('.notif-toast');
+    if (ex) ex.remove();
+    const n = document.createElement('div');
+    const colors = { success:'from-emerald-600 to-green-500', error:'from-red-600 to-rose-500', info:'from-slate-700 to-slate-600' };
+    n.className = `notif-toast fixed top-4 right-4 z-[9999] px-5 py-3 rounded-xl shadow-xl bg-gradient-to-r ${colors[type]||colors.info} text-white text-sm font-medium flex items-center gap-2`;
+    n.style.transform = 'translateX(160%)';
+    n.style.transition = 'transform 0.3s ease';
+    n.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✗':'i'}</span><span>${msg}</span>`;
+    document.body.appendChild(n);
+    requestAnimationFrame(() => { n.style.transform = 'translateX(0)'; });
+    setTimeout(() => {
+        n.style.transform = 'translateX(160%)';
+        setTimeout(() => { if(n.parentNode) n.remove(); }, 320);
+    }, 3500);
+}
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFromStorage();
-            setDefaultDates();
-            updateCurrentDate();
-            renderTableHeaders();
-            
-            // Add event listener for Enter key on logo URL input
-            document.getElementById('logoUrlInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loadLogoFromUrl();
-                }
+/* ================================================
+   EXCEL
+   ================================================ */
+function processExcel(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type:'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(ws);
+        allData = jsonData.map((row,i) => ({
+            slNo: row['Sl No']||i+1,
+            vendorName: row['Vendor Name']||row['Vendor']||row['VendorName']||row['Supplier']||'',
+            code: row['Code']||row['Product Code']||row['SKU']||row['Item Code']||'',
+            productsName: row['Products Name']||row['Product Name']||row['Item']||row['Description']||'',
+            cpu: parseFloat(row['CPU'])||parseFloat(row['Unit Price'])||parseFloat(row['Price'])||0,
+            poQty: parseFloat(row['PO Qty'])||parseFloat(row['Quantity'])||parseFloat(row['Qty'])||0,
+            storeName: row['Store Name']||row['Store']||row['Location']||''
+        }));
+        populateFilters(); applyFilters(); saveToStorage();
+        showNotification('Excel loaded successfully!','success');
+    };
+    reader.readAsArrayBuffer(file);
+}
+function processPDF(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    showNotification('PDF uploaded: '+file.name,'info');
+}
+function uploadLogo(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.match('image.*')) { showNotification('Please select an image file','error'); return; }
+    if (file.size > 5*1024*1024) { showNotification('Image too large (max 5MB)','error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+        logoData = e.target.result;
+        document.getElementById('logoImg').src = logoData;
+        document.getElementById('logoPreview').classList.remove('hidden');
+        saveToStorage(); showNotification('Logo uploaded!','success');
+    };
+    reader.readAsDataURL(file);
+}
+function uploadSignature(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.match('image.*')) { showNotification('Please select an image file','error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+        signatureData = e.target.result;
+        document.getElementById('signatureImg').src = signatureData;
+        document.getElementById('signaturePreview').classList.remove('hidden');
+        saveToStorage(); showNotification('Signature uploaded!','success');
+    };
+    reader.readAsDataURL(file);
+}
+function removeLogo() {
+    logoData = null;
+    document.getElementById('logoPreview').classList.add('hidden');
+    document.getElementById('logoFile').value = '';
+    document.getElementById('logoUrlInput').value = 'https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk';
+    saveToStorage(); showNotification('Logo removed','info');
+}
+function removeSignature() {
+    signatureData = null;
+    document.getElementById('signaturePreview').classList.add('hidden');
+    document.getElementById('signatureFile').value = '';
+    saveToStorage(); showNotification('Signature removed','info');
+}
+
+/* ================================================
+   TABLE HEADERS
+   ================================================ */
+function renderTableHeaders() {
+    const cols = [
+        {key:'slNo',editable:false}, {key:'vendorName',editable:true}, {key:'code',editable:true},
+        {key:'productsName',editable:true}, {key:'cpu',editable:true}, {key:'poQty',editable:true},
+        {key:'storeName',editable:true}, {key:'poValue',editable:true}, {key:'actions',editable:false}
+    ];
+    const names = {...columnHeaders, actions:'Actions'};
+    document.getElementById('tableHeader').innerHTML = `<tr>${cols.map(c=>`
+        <th class="px-3 py-3.5 text-left text-xs font-semibold ${c.editable?'editable-header':''}"
+            ${c.editable?`ondblclick="editHeader('${c.key}')"`:''}>${names[c.key]||''}</th>`).join('')}</tr>`;
+}
+function editHeader(key) {
+    if (editingHeader) return;
+    const th = document.querySelector(`th[ondblclick="editHeader('${key}')"]`);
+    if (!th) return;
+    const orig = th.textContent.trim();
+    th.innerHTML = `<input type="text" value="${orig}" class="w-full px-1.5 py-0.5 bg-white text-slate-800 rounded border border-blue-400 text-xs focus:outline-none" onkeydown="handleHeaderKey(event,'${key}')" onblur="saveHeader('${key}',this.value)">`;
+    editingHeader = key;
+    const inp = th.querySelector('input');
+    inp.focus(); inp.select();
+}
+function handleHeaderKey(e, key) {
+    if (e.key==='Enter') saveHeader(key, e.target.value);
+    else if (e.key==='Escape') { editingHeader=null; renderTableHeaders(); }
+}
+function saveHeader(key, val) {
+    columnHeaders[key] = val.trim() || columnHeaders[key];
+    editingHeader = null;
+    renderTableHeaders(); renderTable(); saveToStorage();
+}
+
+/* ================================================
+   ROWS
+   ================================================ */
+function addManualRow() {
+    const row = { slNo:filteredData.length+1, vendorName:'', code:'', productsName:'', cpu:0, poQty:0, storeName:'' };
+    filteredData.push(row);
+    filteredData = filteredData.map((r,i)=>({...r,slNo:i+1}));
+    allData.push({...row});
+    renderTable(); calculateTotal(); updateVendorFilter(); saveToStorage();
+    showNotification('New row added','info');
+    setTimeout(()=>{ const last=document.getElementById('tableBody').lastElementChild; if(last) last.scrollIntoView({behavior:'smooth',block:'nearest'}); },100);
+}
+function updateVendorFilter() {
+    const sel = document.getElementById('vendorFilter');
+    const cur = sel.value;
+    const vendors = [...new Set(allData.map(i=>i.vendorName))].filter(v=>v&&v.trim());
+    sel.innerHTML = '<option value="">All Vendors</option>';
+    vendors.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+    if (cur&&vendors.includes(cur)) sel.value=cur;
+}
+function updateStoreFilter() {
+    const sel = document.getElementById('storeFilter');
+    const cur = sel.value;
+    const stores = [...new Set(allData.map(i=>i.storeName))].filter(s=>s&&s.trim());
+    sel.innerHTML = '<option value="">All Stores</option>';
+    stores.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+    if (cur&&stores.includes(cur)) sel.value=cur;
+}
+function populateFilters() { updateVendorFilter(); updateStoreFilter(); }
+function applyFilters() {
+    const vf = document.getElementById('vendorFilter').value;
+    const sf = document.getElementById('storeFilter').value;
+    filteredData = allData.filter(i=>(!vf||i.vendorName===vf)&&(!sf||i.storeName===sf)).map((i,n)=>({...i,slNo:n+1}));
+    renderTable(); calculateTotal(); saveToStorage();
+}
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    document.getElementById('itemCount').textContent = `${filteredData.length} Items`;
+    if (!filteredData.length) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-14">
+            <div class="flex flex-col items-center">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3 animate-float"><span class="text-3xl">📁</span></div>
+                <p class="text-slate-500 font-medium text-sm">No data available</p>
+                <p class="text-slate-400 text-xs mt-1">Upload an Excel file or add rows manually</p>
+                <button onclick="addManualRow()" class="mt-3 btn-green text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 mx-auto hover:opacity-90 transition-opacity">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add First Item
+                </button>
+            </div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = filteredData.map((item,idx)=>`
+        <tr class="table-row transition-colors">
+            <td class="px-3 py-3"><span class="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-xs font-semibold text-slate-600">${item.slNo}</span></td>
+            <td class="px-3 py-3"><input type="text" value="${escHtml(item.vendorName)}" onchange="updateItem(${idx},'vendorName',this.value)" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-400 outline-none" placeholder="Vendor name"></td>
+            <td class="px-3 py-3"><input type="text" value="${escHtml(item.code)}" onchange="updateItem(${idx},'code',this.value)" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-400 outline-none" placeholder="Code"></td>
+            <td class="px-3 py-3"><input type="text" value="${escHtml(item.productsName)}" onchange="updateItem(${idx},'productsName',this.value)" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-400 outline-none" placeholder="Product name"></td>
+            <td class="px-3 py-3"><input type="number" value="${item.cpu}" onchange="updateItem(${idx},'cpu',parseFloat(this.value)||0)" class="w-20 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-right focus:border-blue-400 outline-none" step="0.01" min="0"></td>
+            <td class="px-3 py-3"><input type="number" value="${item.poQty}" onchange="updateItem(${idx},'poQty',parseFloat(this.value)||0)" class="w-16 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-right focus:border-blue-400 outline-none" min="0"></td>
+            <td class="px-3 py-3">
+                <select onchange="updateItem(${idx},'storeName',this.value)" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:border-blue-400 outline-none">
+                    <option value="" ${!item.storeName?'selected':''}>Select</option>
+                    ${['NORP KNIT','ESL','ICCL','HA-MEEM','RUPSHI','GBAL','MONDOL','OTHER'].map(s=>`<option value="${s}" ${item.storeName===s?'selected':''}>${s}</option>`).join('')}
+                </select>
+            </td>
+            <td class="px-3 py-3 text-right"><span class="font-bold text-slate-800 text-xs">${(item.cpu*item.poQty).toFixed(2)}</span></td>
+            <td class="px-3 py-3 text-center">
+                <button onclick="deleteItem(${idx})" class="w-8 h-8 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors flex items-center justify-center mx-auto">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </td>
+        </tr>`).join('');
+}
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function updateItem(idx, field, value) {
+    filteredData[idx][field] = value;
+    const orig = allData.findIndex(i=>i.vendorName===filteredData[idx].vendorName&&i.productsName===filteredData[idx].productsName&&i.code===filteredData[idx].code);
+    if (orig!==-1) allData[orig][field]=value; else allData.push({...filteredData[idx]});
+    renderTable(); calculateTotal();
+    if (field==='vendorName') updateVendorFilter();
+    else if (field==='storeName') updateStoreFilter();
+    saveToStorage();
+}
+function deleteItem(idx) {
+    if (!confirm('Delete this item?')) return;
+    const deleted = filteredData[idx];
+    filteredData.splice(idx,1);
+    filteredData = filteredData.map((r,i)=>({...r,slNo:i+1}));
+    if (deleted) allData = allData.filter(i=>!(i.vendorName===deleted.vendorName&&i.productsName===deleted.productsName&&i.code===deleted.code));
+    renderTable(); calculateTotal(); updateVendorFilter(); updateStoreFilter(); saveToStorage();
+    showNotification('Item deleted','info');
+}
+function calculateTotal() {
+    const total = filteredData.reduce((s,i)=>s+(i.cpu*i.poQty),0);
+    const qty   = filteredData.reduce((s,i)=>s+i.poQty,0);
+    document.getElementById('totalPOValue').textContent = total.toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('totalItems').textContent = filteredData.length;
+    document.getElementById('totalQty').textContent = qty;
+}
+
+/* ================================================
+   PDF CORE — buildPDFDoc
+   FIXED: full delivery address, logo spacing,
+   smaller signature, all data shown correctly
+   ================================================ */
+function buildPDFDoc(items, opts={}) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+    const vendorName   = opts.vendorName   || 'All Vendors';
+    const storeName    = opts.storeName    || '';
+    const spName       = opts.storePersonName  || document.getElementById('storePersonName').value || '';
+    const spPhone      = opts.storePersonPhone || document.getElementById('storePersonPhone').value || '';
+    const delivAddr    = opts.deliveryAddress  || document.getElementById('deliveryAddress').value  || '';
+    // FIX: Always use current date for PO date, +7 for delivery
+    const poDateVal    = todayStr();
+    const delDateVal   = plusDaysStr(7);
+    const refNo        = document.getElementById('referenceNo').value || generateRefNo();
+    const cName        = document.getElementById('contactName').value;
+    const cPhone       = document.getElementById('contactPhone').value;
+    const cEmail       = document.getElementById('contactEmail').value;
+
+    const PW = 210, PH = 297;
+    const ML = 14, MR = 14;
+    const CW = PW - ML - MR;
+
+    // White background
+    doc.setFillColor(255,255,255);
+    doc.rect(0,0,PW,PH,'F');
+
+    // Top accent bar — thin, elegant navy
+    doc.setFillColor(30,58,95);
+    doc.rect(0,0,PW,4,'F');
+
+    let y = 10;
+
+    // ── LOGO — centered, proportional ──
+    if (logoData) {
+        try {
+            const tmp = new Image(); tmp.src = logoData;
+            const iw = tmp.naturalWidth||tmp.width||200;
+            const ih = tmp.naturalHeight||tmp.height||80;
+            const maxW = 40, maxH = 16;
+            let dw = maxW, dh = dw*(ih/iw);
+            if (dh>maxH) { dh=maxH; dw=dh*(iw/ih); }
+            doc.addImage(logoData,'PNG',(PW-dw)/2, y, dw, dh);
+            y += dh + 8; // FIX: proper spacing after logo before title
+        } catch(e) { console.warn('Logo err:',e); y += 8; }
+    }
+
+    // ── TITLE ──
+    doc.setFontSize(15);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(30,58,95);
+    doc.text('PURCHASE ORDER', PW/2, y, {align:'center'});
+    y += 2;
+    // Thin underline
+    doc.setDrawColor(30,58,95);
+    doc.setLineWidth(0.4);
+    const titleW = 46;
+    doc.line(PW/2 - titleW/2, y+1.5, PW/2 + titleW/2, y+1.5);
+    y += 9;
+
+    // ── INFO SECTION — two-column box ──
+    // Dynamically calculate address height for proper box sizing
+    doc.setFontSize(7.5);
+    const availAddrW = 182/2 - 36 - 4; // approx right value width
+    const addrLines = doc.splitTextToSize(delivAddr, availAddrW > 0 ? availAddrW : 50);
+    const addrLineCount = Math.max(addrLines.length, 1);
+    // Each row = 6mm, address may need extra rows
+    const extraAddrRows = Math.max(0, addrLineCount - 1);
+    const boxH = 30 + extraAddrRows * 4.5;
+
+    doc.setFillColor(248,250,252);
+    doc.setDrawColor(226,232,240);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(ML, y, CW, boxH, 1.5, 1.5, 'FD');
+
+    const rowH = 6;
+    const col1L = ML+3, col1V = ML+30;
+    const col2L = PW/2+2, col2V = PW/2+34;
+    const infoY = y + 5;
+
+    // Left column labels + values
+    const leftRows = [
+        ['PO Date:',   poDateVal],
+        ['Ref No:',    refNo],
+        ['Del. Date:', delDateVal],
+        ['Vendor:',    vendorName],
+    ];
+
+    leftRows.forEach((r, i) => {
+        const ry = infoY + i * rowH;
+        doc.setFontSize(7.2);
+        doc.setFont('helvetica','normal'); doc.setTextColor(100,116,139);
+        doc.text(r[0], col1L, ry);
+        doc.setFont('helvetica','bold'); doc.setTextColor(30,41,59);
+        // Wrap vendor name if long
+        const maxLeftW = PW/2 - col1V - 4;
+        const leftLines = doc.splitTextToSize(String(r[1]||''), maxLeftW);
+        doc.text(leftLines[0]||'', col1V, ry);
+        if (leftLines[1]) { doc.setFontSize(6.8); doc.text(leftLines[1], col1V, ry+3.5); doc.setFontSize(7.2); }
+    });
+
+    // Right column — delivery address gets full multiline treatment
+    const rightRows = [
+        ['Store:', storeName, false],
+        ['Person:', spName, false],
+        ['Phone:', spPhone, false],
+        ['Address:', delivAddr, true],  // true = multiline
+    ];
+
+    const maxRightValW = PW - MR - col2V - 2;
+    let rightCurrentY = infoY;
+
+    rightRows.forEach((r) => {
+        doc.setFontSize(7.2);
+        doc.setFont('helvetica','normal'); doc.setTextColor(100,116,139);
+        doc.text(r[0], col2L, rightCurrentY);
+        doc.setFont('helvetica','bold'); doc.setTextColor(30,41,59);
+
+        if (r[2]) {
+            // Multiline address — show ALL lines
+            const lines = doc.splitTextToSize(String(r[1]||''), maxRightValW);
+            lines.forEach((line, li) => {
+                doc.setFontSize(li === 0 ? 7.2 : 6.8);
+                doc.text(line, col2V, rightCurrentY + li * 4);
             });
-            
-            // Auto-load the default logo URL on page load
-            setTimeout(() => {
-                if (!logoData) {
-                    console.log('Auto-loading default logo...');
-                    loadLogoFromUrl();
-                }
-            }, 500);
-        });
-
-        function updateCurrentDate() {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', options);
+            rightCurrentY += Math.max(rowH, lines.length * 4 + 1);
+        } else {
+            const lines = doc.splitTextToSize(String(r[1]||''), maxRightValW);
+            doc.text(lines[0]||'', col2V, rightCurrentY);
+            rightCurrentY += rowH;
         }
+    });
 
-        function setDefaultDates() {
-            const today = new Date().toISOString().split('T')[0];
-            if (!document.getElementById('poDate').value) {
-                document.getElementById('poDate').value = today;
-            }
-            if (!document.getElementById('deliveryDate').value) {
-                document.getElementById('deliveryDate').value = today;
-            }
-        }
+    y += boxH + 6;
 
-        function updateStoreDetails() {
-            const storeName = document.getElementById('mainStoreName').value;
-            if (storeDetails[storeName]) {
-                document.getElementById('deliveryAddress').value = storeDetails[storeName].address;
-                document.getElementById('storePersonName').value = storeDetails[storeName].person;
-                document.getElementById('storePersonPhone').value = storeDetails[storeName].phone;
-            }
-            saveToStorage();
-        }
+    // ── ITEMS TABLE ──
+    const tableData = items.map((item, i) => [
+        item.slNo || (i+1),
+        item.code || '',
+        item.productsName || '',
+        (typeof item.cpu === 'number' ? item.cpu : parseFloat(item.cpu)||0).toFixed(2),
+        item.poQty || 0,
+        ((typeof item.cpu === 'number' ? item.cpu : parseFloat(item.cpu)||0) * (item.poQty||0)).toFixed(2)
+    ]);
 
-        function loadLogoFromUrl() {
-            const urlInput = document.getElementById('logoUrlInput');
-            const url = urlInput.value.trim();
-            
-            if (!url) {
-                alert('Please enter a logo URL');
-                return;
-            }
+    doc.autoTable({
+        startY: y,
+        head: [[
+            columnHeaders.slNo || 'Sl No',
+            columnHeaders.code || 'Code',
+            columnHeaders.productsName || 'Product Name',
+            columnHeaders.cpu || 'CPU',
+            columnHeaders.poQty || 'PO Qty',
+            columnHeaders.poValue || 'PO Value'
+        ]],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [30,58,95],
+            textColor: 255,
+            fontStyle: 'bold',
+            fontSize: 8,
+            cellPadding: { top:3, bottom:3, left:3, right:3 }
+        },
+        bodyStyles: {
+            textColor: [30,41,59],
+            fontSize: 7.5,
+            cellPadding: { top:2.5, bottom:2.5, left:3, right:3 }
+        },
+        alternateRowStyles: { fillColor: [248,250,252] },
+        columnStyles: {
+            0: { halign:'center', cellWidth:10 },
+            1: { cellWidth:28 },
+            2: { cellWidth:'auto', overflow:'linebreak' },
+            3: { halign:'right', cellWidth:20 },
+            4: { halign:'right', cellWidth:14 },
+            5: { halign:'right', fontStyle:'bold', cellWidth:22 }
+        },
+        margin: { left:ML, right:MR },
+        styles: {
+            overflow: 'linebreak',
+            lineColor: [226,232,240],
+            lineWidth: 0.2,
+            font: 'helvetica'
+        },
+        showFoot: 'never'
+    });
 
-            // Show loading spinner
-            document.getElementById('loadingSpinner').classList.remove('hidden');
+    y = doc.lastAutoTable.finalY + 5;
 
-            // Convert Google Drive link if needed
-            let processedUrl = url;
-            
-            // Check if it's a Google Drive share link and convert to direct download link
-            if (url.includes('drive.google.com/file/d/')) {
-                const fileIdMatch = url.match(/\/d\/([^/]+)/);
-                if (fileIdMatch && fileIdMatch[1]) {
-                    processedUrl = `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
-                }
-            }
-            
-            // For Googleusercontent links, try to use CORS proxy
-            if (url.includes('googleusercontent.com')) {
-                processedUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-            }
+    // ── TOTAL BAR ──
+    const total = items.reduce((s,i)=>s+((typeof i.cpu==='number'?i.cpu:parseFloat(i.cpu)||0)*(i.poQty||0)),0);
+    const totalQty = items.reduce((s,i)=>s+(i.poQty||0),0);
 
-            console.log('Loading logo from URL:', processedUrl);
-            
-            // Create a test image to check if it loads
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            
-            img.onload = function() {
-                console.log('Image loaded successfully');
-                try {
-                    // Create canvas to convert to data URL
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Convert to data URL
-                    const dataUrl = canvas.toDataURL('image/png');
-                    
-                    // Store and display the logo
-                    logoData = dataUrl;
-                    document.getElementById('logoImg').src = dataUrl;
-                    document.getElementById('logoPreview').classList.remove('hidden');
-                    
-                    // Hide loading spinner
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    
-                    saveToStorage();
-                    
-                    // Show success message
-                    showNotification('Logo loaded successfully!', 'success');
-                    
-                } catch (error) {
-                    console.error('Error converting image:', error);
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    
-                    // Try direct assignment as fallback
-                    logoData = img.src;
-                    document.getElementById('logoImg').src = img.src;
-                    document.getElementById('logoPreview').classList.remove('hidden');
-                    saveToStorage();
-                    showNotification('Logo loaded successfully!', 'success');
-                }
-            };
-            
-            img.onerror = function(error) {
-                console.error('Error loading image:', error);
-                document.getElementById('loadingSpinner').classList.add('hidden');
-                
-                // Try alternative approaches
-                if (url.includes('drive.google.com')) {
-                    tryAlternativeGoogleDriveLoad(url);
-                } else {
-                    showNotification('Failed to load logo. Please try a different URL or upload the image directly.', 'error');
-                }
-            };
-            
-            // Set a timeout for image loading
-            setTimeout(() => {
-                if (!img.complete) {
-                    console.log('Image loading timeout');
-                    img.onerror(new Error('Image loading timeout'));
-                }
-            }, 15000);
-            
-            img.src = processedUrl;
-        }
+    const barW = 90, barH = 14;
+    const barX = (PW - barW) / 2;
+    doc.setFillColor(30,58,95);
+    doc.roundedRect(barX, y, barW, barH, 2, 2, 'F');
 
-        function tryAlternativeGoogleDriveLoad(url) {
-            // Extract file ID from Google Drive URL
-            let fileId = '';
-            
-            // Try to extract from different URL formats
-            if (url.includes('/d/')) {
-                const match = url.match(/\/d\/([^/]+)/);
-                if (match) fileId = match[1];
-            } else if (url.includes('id=')) {
-                const match = url.match(/id=([^&]+)/);
-                if (match) fileId = match[1];
-            }
-            
-            if (!fileId) {
-                showNotification('Could not extract file ID from Google Drive URL', 'error');
-                return;
-            }
-            
-            // Try different Google Drive URL formats
-            const alternativeUrls = [
-                `https://drive.google.com/uc?export=view&id=${fileId}`,
-                `https://lh3.googleusercontent.com/d/${fileId}=s0`,
-                `https://lh3.googleusercontent.com/d/${fileId}=w1000`,
-                `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`
-            ];
-            
-            let currentTry = 0;
-            
-            function tryNextUrl() {
-                if (currentTry >= alternativeUrls.length) {
-                    showNotification('Failed to load logo from Google Drive. Please upload the image directly.', 'error');
-                    return;
-                }
-                
-                console.log('Trying alternative URL:', alternativeUrls[currentTry]);
-                const testImg = new Image();
-                testImg.crossOrigin = "anonymous";
-                
-                testImg.onload = function() {
-                    logoData = testImg.src;
-                    document.getElementById('logoImg').src = testImg.src;
-                    document.getElementById('logoPreview').classList.remove('hidden');
-                    saveToStorage();
-                    document.getElementById('loadingSpinner').classList.add('hidden');
-                    showNotification('Logo loaded successfully!', 'success');
-                };
-                
-                testImg.onerror = function() {
-                    currentTry++;
-                    tryNextUrl();
-                };
-                
-                testImg.src = alternativeUrls[currentTry];
-            }
-            
-            tryNextUrl();
-        }
+    doc.setFontSize(6.8); doc.setFont('helvetica','normal'); doc.setTextColor(180,200,230);
+    doc.text('TOTAL PURCHASE ORDER VALUE', PW/2, y+4.5, {align:'center'});
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+    doc.text(
+        total.toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2}),
+        PW/2, y+10.5, {align:'center'}
+    );
 
-        function showNotification(message, type = 'info') {
-            // Remove existing notifications
-            const existingNotif = document.querySelector('.notification-toast');
-            if (existingNotif) {
-                existingNotif.remove();
-            }
-            
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `notification-toast fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-2xl ${
-                type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
-                type === 'error' ? 'bg-gradient-to-r from-red-500 to-rose-600' :
-                'bg-gradient-to-r from-blue-500 to-purple-600'
-            } text-white font-medium flex items-center gap-3 transform transition-all duration-300`;
-            notification.style.transform = 'translateX(150%)';
-            
-            // Add icon based on type
-            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-            notification.innerHTML = `
-                <span class="text-lg">${icon}</span>
-                <span>${message}</span>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Animate in
-            setTimeout(() => {
-                notification.style.transform = 'translateX(0)';
-            }, 10);
-            
-            // Auto-remove after 4 seconds
-            setTimeout(() => {
-                notification.style.transform = 'translateX(150%)';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 4000);
-            
-            // Add click to dismiss
-            notification.addEventListener('click', () => {
-                notification.style.transform = 'translateX(150%)';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            });
-        }
+    // Items + Qty summary, right-aligned
+    doc.setFontSize(6.5); doc.setFont('helvetica','normal'); doc.setTextColor(120,140,170);
+    doc.text(`${items.length} item(s)  |  Qty: ${totalQty}`, PW-MR, y+barH+4, {align:'right'});
 
-        function processExcel(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+    y += barH + 12;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+    // ── SIGNATURE — FIX: smaller size ──
+    const sigBoxY = y;
+    doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(30,41,59);
+    doc.text('Authorized Signature:', ML, sigBoxY);
 
-                // Process data with flexibility for column names
-                allData = jsonData.map((row, index) => {
-                    // Try to match columns with flexible names
-                    const vendorName = row['Vendor Name'] || row['Vendor'] || row['VendorName'] || row['Supplier'] || '';
-                    const code = row['Code'] || row['Product Code'] || row['SKU'] || row['Item Code'] || '';
-                    const productsName = row['Products Name'] || row['Product Name'] || row['Item'] || row['Description'] || '';
-                    const cpu = parseFloat(row['CPU']) || parseFloat(row['Unit Price']) || parseFloat(row['Price']) || 0;
-                    const poQty = parseFloat(row['PO Qty']) || parseFloat(row['Quantity']) || parseFloat(row['Qty']) || 0;
-                    const storeName = row['Store Name'] || row['Store'] || row['Location'] || '';
+    if (signatureData) {
+        try {
+            // FIX: smaller signature — max 24x10mm
+            const tmp2 = new Image(); tmp2.src = signatureData;
+            const sw = tmp2.naturalWidth||tmp2.width||200;
+            const sh = tmp2.naturalHeight||tmp2.height||80;
+            const maxSW = 24, maxSH = 10;
+            let dw2 = maxSW, dh2 = dw2*(sh/sw);
+            if (dh2>maxSH) { dh2=maxSH; dw2=dh2*(sw/sh); }
+            doc.addImage(signatureData,'PNG', ML, sigBoxY+2, dw2, dh2);
+            y = sigBoxY + dh2 + 5;
+        } catch(e) { y = sigBoxY + 14; }
+    } else {
+        y = sigBoxY + 14;
+    }
 
-                    return {
-                        slNo: row['Sl No'] || index + 1,
-                        vendorName: vendorName,
-                        code: code,
-                        productsName: productsName,
-                        cpu: cpu,
-                        poQty: poQty,
-                        storeName: storeName
-                    };
-                });
+    doc.setDrawColor(180,190,210); doc.setLineWidth(0.25);
+    doc.line(ML, y, ML+40, y);
+    doc.setFontSize(6.5); doc.setFont('helvetica','normal'); doc.setTextColor(150,163,175);
+    doc.text('Authorized Signature', ML, y+3.5);
+    doc.text(
+        `Date: ${new Date().toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric'})}`,
+        PW-MR, y+3.5, {align:'right'}
+    );
 
-                populateFilters();
-                applyFilters();
-                saveToStorage();
-                showNotification('Excel file loaded successfully!', 'success');
-            };
-            reader.readAsArrayBuffer(file);
-        }
+    // ── FOOTER ──
+    const footY = PH - 14;
+    doc.setFillColor(248,250,252);
+    doc.rect(0, footY-2, PW, 16, 'F');
+    doc.setDrawColor(226,232,240); doc.setLineWidth(0.25);
+    doc.line(0, footY-2, PW, footY-2);
 
-        function processPDF(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            showNotification('PDF uploaded: ' + file.name, 'info');
-        }
+    doc.setFontSize(6.8); doc.setFont('helvetica','bold'); doc.setTextColor(30,58,95);
+    doc.text('For Queries:', ML, footY+3);
+    doc.setFont('helvetica','normal'); doc.setTextColor(71,85,105);
+    // FIX: split footer text to fit width
+    const footerStr = `${cName}   |   ${cPhone}   |   ${cEmail}`;
+    const footerLines = doc.splitTextToSize(footerStr, CW - 22);
+    footerLines.forEach((l,i) => doc.text(l, ML+22, footY+3+i*4));
 
-        function uploadLogo(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+    // Bottom accent
+    doc.setFillColor(30,58,95);
+    doc.rect(0, PH-3, PW, 3, 'F');
 
-            // Validate file type
-            if (!file.type.match('image.*')) {
-                showNotification('Please select an image file (PNG, JPG, etc.)', 'error');
-                return;
-            }
+    return doc;
+}
 
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showNotification('Image file is too large (max 5MB)', 'error');
-                return;
-            }
+/* ================================================
+   PREVIEW MODAL
+   ================================================ */
+function generatePDF() {
+    if (!filteredData.length) { showNotification('Add items before generating PDF','error'); return; }
+    const vendorName = document.getElementById('vendorFilter').value || 'All Vendors';
+    const storeName  = document.getElementById('mainStoreName').value || document.getElementById('storeFilter').value || '';
+    const total = filteredData.reduce((s,i)=>s+(i.cpu*i.poQty),0);
+    const totalQty = filteredData.reduce((s,i)=>s+i.poQty,0);
+    const refNo = document.getElementById('referenceNo').value;
+    // FIX: always use current date
+    const poDate = todayStr();
+    const delDate = plusDaysStr(7);
+    const addr = document.getElementById('deliveryAddress').value;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                logoData = e.target.result;
-                document.getElementById('logoImg').src = logoData;
-                document.getElementById('logoPreview').classList.remove('hidden');
-                saveToStorage();
-                showNotification('Logo uploaded successfully!', 'success');
-            };
-            reader.readAsDataURL(file);
-        }
+    const rows = filteredData.map(item=>`
+        <tr class="border-b border-slate-100">
+            <td class="px-3 py-2 text-center text-xs text-slate-600">${item.slNo}</td>
+            <td class="px-3 py-2 text-xs text-slate-700">${escHtml(item.code||'')}</td>
+            <td class="px-3 py-2 text-xs text-slate-700">${escHtml(item.productsName||'')}</td>
+            <td class="px-3 py-2 text-right text-xs text-slate-700">${(item.cpu||0).toFixed(2)}</td>
+            <td class="px-3 py-2 text-right text-xs text-slate-700">${item.poQty||0}</td>
+            <td class="px-3 py-2 text-right text-xs font-semibold text-slate-800">${((item.cpu||0)*(item.poQty||0)).toFixed(2)}</td>
+        </tr>`).join('');
 
-        function uploadSignature(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            // Validate file type
-            if (!file.type.match('image.*')) {
-                showNotification('Please select an image file (PNG, JPG, etc.)', 'error');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                signatureData = e.target.result;
-                document.getElementById('signatureImg').src = signatureData;
-                document.getElementById('signaturePreview').classList.remove('hidden');
-                saveToStorage();
-                showNotification('Signature uploaded successfully!', 'success');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function removeLogo() {
-            logoData = null;
-            document.getElementById('logoPreview').classList.add('hidden');
-            document.getElementById('logoFile').value = '';
-            document.getElementById('logoUrlInput').value = 'https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk';
-            saveToStorage();
-            showNotification('Logo removed', 'info');
-        }
-
-        function removeSignature() {
-            signatureData = null;
-            document.getElementById('signaturePreview').classList.add('hidden');
-            document.getElementById('signatureFile').value = '';
-            saveToStorage();
-            showNotification('Signature removed', 'info');
-        }
-
-        function renderTableHeaders() {
-            const thead = document.getElementById('tableHeader');
-            const columns = [
-                { key: 'slNo', name: columnHeaders.slNo, editable: false, align: 'left' },
-                { key: 'vendorName', name: columnHeaders.vendorName, editable: true, align: 'left' },
-                { key: 'code', name: columnHeaders.code, editable: true, align: 'left' },
-                { key: 'productsName', name: columnHeaders.productsName, editable: true, align: 'left' },
-                { key: 'cpu', name: columnHeaders.cpu, editable: true, align: 'right' },
-                { key: 'poQty', name: columnHeaders.poQty, editable: true, align: 'right' },
-                { key: 'storeName', name: columnHeaders.storeName, editable: true, align: 'left' },
-                { key: 'poValue', name: columnHeaders.poValue, editable: true, align: 'right' },
-                { key: 'actions', name: 'Actions', editable: false, align: 'center' }
-            ];
-
-            thead.innerHTML = `
-                <tr>
-                    ${columns.map(col => `
-                        <th class="px-4 py-4 text-${col.align} text-sm font-semibold ${col.editable ? 'editable-header' : ''}"
-                            ${col.editable ? `ondblclick="editHeader('${col.key}')"` : ''}>
-                            ${col.name}
-                        </th>
-                    `).join('')}
-                </tr>
-            `;
-        }
-
-        function editHeader(key) {
-            if (editingHeader) return;
-            
-            const th = document.querySelector(`th[ondblclick="editHeader('${key}')"]`);
-            if (!th) return;
-            
-            const originalText = th.textContent;
-            th.innerHTML = `
-                <input type="text" 
-                    value="${originalText}" 
-                    class="w-full px-2 py-1 bg-white text-slate-800 rounded border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    onkeydown="handleHeaderKeydown(event, '${key}')"
-                    onblur="saveHeaderEdit('${key}', this.value)">
-            `;
-            
-            editingHeader = key;
-            const input = th.querySelector('input');
-            input.focus();
-            input.select();
-        }
-
-        function handleHeaderKeydown(event, key) {
-            if (event.key === 'Enter') {
-                saveHeaderEdit(key, event.target.value);
-            } else if (event.key === 'Escape') {
-                cancelHeaderEdit(key);
-            }
-        }
-
-        function saveHeaderEdit(key, newName) {
-            if (key !== 'poValue') {
-                columnHeaders[key] = newName.trim() || columnHeaders[key];
-            }
-            editingHeader = null;
-            renderTableHeaders();
-            renderTable();
-            saveToStorage();
-        }
-
-        function cancelHeaderEdit(key) {
-            editingHeader = null;
-            renderTableHeaders();
-        }
-
-        function addManualRow() {
-            const newRow = {
-                slNo: filteredData.length + 1,
-                vendorName: '',
-                code: '',
-                productsName: '',
-                cpu: 0,
-                poQty: 0,
-                storeName: ''
-            };
-            
-            filteredData.push(newRow);
-            
-            // Update Sl No for all rows
-            filteredData = filteredData.map((item, index) => ({
-                ...item,
-                slNo: index + 1
-            }));
-            
-            // Also add to allData for persistence
-            allData.push({...newRow});
-            
-            renderTable();
-            calculateTotal();
-            updateVendorFilter();
-            saveToStorage();
-            showNotification('New row added', 'info');
-            
-            // Scroll to the new row
-            setTimeout(() => {
-                const tableBody = document.getElementById('tableBody');
-                const lastRow = tableBody.lastElementChild;
-                if (lastRow) {
-                    lastRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-            }, 100);
-        }
-
-        function updateVendorFilter() {
-            const vendorSelect = document.getElementById('vendorFilter');
-            const currentVendor = vendorSelect.value;
-            
-            // Get all unique vendor names from allData
-            const vendors = [...new Set(allData.map(item => item.vendorName))].filter(v => v && v.trim() !== '');
-            
-            // Save existing options except "All Vendors"
-            vendorSelect.innerHTML = '<option value="">All Vendors</option>';
-            
-            // Add vendor options
-            vendors.forEach(vendor => {
-                const option = document.createElement('option');
-                option.value = vendor;
-                option.textContent = vendor;
-                vendorSelect.appendChild(option);
-            });
-            
-            // Restore selected vendor if it still exists
-            if (currentVendor && vendors.includes(currentVendor)) {
-                vendorSelect.value = currentVendor;
-            }
-        }
-
-        function updateStoreFilter() {
-            const storeSelect = document.getElementById('storeFilter');
-            const currentStore = storeSelect.value;
-            
-            // Get all unique store names from allData
-            const stores = [...new Set(allData.map(item => item.storeName))].filter(s => s && s.trim() !== '');
-            
-            // Save existing options except "All Stores"
-            storeSelect.innerHTML = '<option value="">All Stores</option>';
-            
-            // Add store options
-            stores.forEach(store => {
-                const option = document.createElement('option');
-                option.value = store;
-                option.textContent = store;
-                storeSelect.appendChild(option);
-            });
-            
-            // Restore selected store if it still exists
-            if (currentStore && stores.includes(currentStore)) {
-                storeSelect.value = currentStore;
-            }
-        }
-
-        function populateFilters() {
-            updateVendorFilter();
-            updateStoreFilter();
-        }
-
-        function applyFilters() {
-            const vendorFilter = document.getElementById('vendorFilter').value;
-            const storeFilter = document.getElementById('storeFilter').value;
-
-            filteredData = allData.filter(item => {
-                const vendorMatch = !vendorFilter || item.vendorName === vendorFilter;
-                const storeMatch = !storeFilter || item.storeName === storeFilter;
-                return vendorMatch && storeMatch;
-            });
-
-            // Regenerate Sl No
-            filteredData = filteredData.map((item, index) => ({
-                ...item,
-                slNo: index + 1
-            }));
-
-            renderTable();
-            calculateTotal();
-            saveToStorage();
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            document.getElementById('itemCount').textContent = `${filteredData.length} Items`;
-
-            if (filteredData.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-16">
-                            <div class="flex flex-col items-center">
-                                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 animate-float">
-                                    <span class="text-4xl">📁</span>
-                                </div>
-                                <p class="text-slate-500 font-medium">No data available</p>
-                                <p class="text-slate-400 text-sm mt-1">Upload an Excel file or add rows manually</p>
-                                <button onclick="addManualRow()" class="mt-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-2 rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                    Add First Item
-                                </button>
-                            </div>
-                        </td>
-                    </tr>`;
-                return;
-            }
-
-            tbody.innerHTML = filteredData.map((item, index) => `
-                <tr class="table-row transition-colors">
-                    <td class="px-4 py-4">
-                        <span class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-sm font-semibold text-slate-600">${item.slNo}</span>
-                    </td>
-                    <td class="px-4 py-4">
-                        <input type="text" value="${item.vendorName}" onchange="updateItem(${index}, 'vendorName', this.value)" 
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                            placeholder="Enter vendor name">
-                    </td>
-                    <td class="px-4 py-4">
-                        <input type="text" value="${item.code}" onchange="updateItem(${index}, 'code', this.value)" 
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                            placeholder="Enter product code">
-                    </td>
-                    <td class="px-4 py-4">
-                        <input type="text" value="${item.productsName}" onchange="updateItem(${index}, 'productsName', this.value)" 
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                            placeholder="Enter product name">
-                    </td>
-                    <td class="px-4 py-4">
-                        <input type="number" value="${item.cpu}" onchange="updateItem(${index}, 'cpu', parseFloat(this.value) || 0)" 
-                            class="w-24 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
-                            step="0.01" min="0" placeholder="0.00">
-                    </td>
-                    <td class="px-4 py-4">
-                        <input type="number" value="${item.poQty}" onchange="updateItem(${index}, 'poQty', parseFloat(this.value) || 0)" 
-                            class="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-right focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                            min="0" placeholder="0">
-                    </td>
-                    <td class="px-4 py-4">
-                        <select onchange="updateItem(${index}, 'storeName', this.value)" 
-                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
-                            <option value="" ${!item.storeName ? 'selected' : ''}>Select Store</option>
-                            <option value="NORP KNIT" ${item.storeName === 'NORP KNIT' ? 'selected' : ''}>NORP KNIT</option>
-                            <option value="ESL" ${item.storeName === 'ESL' ? 'selected' : ''}>ESL</option>
-                            <option value="ICCL" ${item.storeName === 'ICCL' ? 'selected' : ''}>ICCL</option>
-                            <option value="HA-MEEM" ${item.storeName === 'HA-MEEM' ? 'selected' : ''}>HA-MEEM</option>
-                            <option value="RUPSHI" ${item.storeName === 'RUPSHI' ? 'selected' : ''}>RUPSHI</option>
-                            <option value="GBAL" ${item.storeName === 'GBAL' ? 'selected' : ''}>GBAL</option>
-                            <option value="MONDOL" ${item.storeName === 'MONDOL' ? 'selected' : ''}>MONDOL</option>
-                            <option value="OTHER" ${item.storeName === 'OTHER' ? 'selected' : ''}>Other</option>
-                        </select>
-                    </td>
-                    <td class="px-4 py-4 text-right">
-                        <span class="font-bold text-slate-800">${(item.cpu * item.poQty).toFixed(2)}</span>
-                    </td>
-                    <td class="px-4 py-4 text-center">
-                        <button onclick="deleteItem(${index})" class="w-9 h-9 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors flex items-center justify-center mx-auto"
-                            title="Delete row">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateItem(index, field, value) {
-            filteredData[index][field] = value;
-            
-            // Update in allData as well
-            const originalIndex = allData.findIndex(item => 
-                item.vendorName === filteredData[index].vendorName && 
-                item.productsName === filteredData[index].productsName &&
-                item.code === filteredData[index].code
-            );
-            if (originalIndex !== -1) {
-                allData[originalIndex][field] = value;
-            } else {
-                // If not found, push the updated item
-                allData.push({...filteredData[index]});
-            }
-
-            renderTable();
-            calculateTotal();
-            
-            // Update filters when vendor or store is updated
-            if (field === 'vendorName') {
-                updateVendorFilter();
-            } else if (field === 'storeName') {
-                updateStoreFilter();
-            }
-            
-            saveToStorage();
-        }
-
-        function deleteItem(index) {
-            if (confirm('Are you sure you want to delete this item?')) {
-                // Remove from filteredData
-                filteredData.splice(index, 1);
-                
-                // Update Sl No
-                filteredData = filteredData.map((item, i) => ({ ...item, slNo: i + 1 }));
-                
-                // Remove from allData if exists
-                const deletedItem = filteredData[index] || allData[index];
-                if (deletedItem) {
-                    allData = allData.filter(item => 
-                        !(item.vendorName === deletedItem.vendorName && 
-                          item.productsName === deletedItem.productsName &&
-                          item.code === deletedItem.code)
-                    );
-                }
-                
-                renderTable();
-                calculateTotal();
-                updateVendorFilter();
-                updateStoreFilter();
-                saveToStorage();
-                showNotification('Item deleted', 'info');
-            }
-        }
-
-        function calculateTotal() {
-            const total = filteredData.reduce((sum, item) => sum + (item.cpu * item.poQty), 0);
-            const totalQty = filteredData.reduce((sum, item) => sum + item.poQty, 0);
-            document.getElementById('totalPOValue').textContent = total.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('totalItems').textContent = filteredData.length;
-            document.getElementById('totalQty').textContent = totalQty;
-        }
-
-        function generatePDF() {
-            if (filteredData.length === 0) {
-                showNotification('Please add some items to the table before generating PDF.', 'error');
-                return;
-            }
-            
-            const previewContent = document.getElementById('pdfPreviewContent');
-            const vendorName = document.getElementById('vendorFilter').value || 'All Vendors';
-            const storeName = document.getElementById('mainStoreName').value || document.getElementById('storeFilter').value || '';
-            
-            let tableRows = filteredData.map(item => `
-                <tr class="border-b border-slate-300">
-                    <td class="px-4 py-3 text-center font-medium">${item.slNo}</td>
-                    <td class="px-4 py-3">${item.code}</td>
-                    <td class="px-4 py-3">${item.productsName}</td>
-                    <td class="px-4 py-3 text-right">${item.cpu.toFixed(2)}</td>
-                    <td class="px-4 py-3 text-right">${item.poQty}</td>
-                    <td class="px-4 py-3 text-right font-semibold">${(item.cpu * item.poQty).toFixed(2)}</td>
-                </tr>
-            `).join('');
-
-            const total = filteredData.reduce((sum, item) => sum + (item.cpu * item.poQty), 0);
-
-            previewContent.innerHTML = `
-                <div class="bg-po p-8 rounded-xl">
-                    <!-- Header with Logo -->
-                    <div class="text-center mb-8">
-                        ${logoData ? `<img src="${logoData}" class="h-24 mx-auto mb-4">` : ''}
-                        <h1 class="text-3xl font-bold text-slate-800 tracking-wide">PURCHASE ORDER</h1>
-                        <div class="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-3 rounded-full"></div>
-                    </div>
-                    
-                    <!-- PO Details Grid -->
-                    <div class="grid grid-cols-2 gap-8 mb-8">
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500 text-sm w-28">PO Date:</span>
-                                <span class="font-semibold text-slate-800">${document.getElementById('poDate').value}</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500 text-sm w-28">Reference No:</span>
-                                <span class="font-semibold text-slate-800">${document.getElementById('referenceNo').value}</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500 text-sm w-28">Delivery Date:</span>
-                                <span class="font-semibold text-slate-800">${document.getElementById('deliveryDate').value}</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500 text-sm w-28">Vendor:</span>
-                                <span class="font-semibold text-slate-800">${vendorName}</span>
-                            </div>
-                        </div>
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500 text-sm w-36">Store Person:</span>
-                                <span class="font-semibold text-slate-800">${document.getElementById('storePersonName').value}</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500 text-sm w-36">Store Person Phone:</span>
-                                <span class="font-semibold text-slate-800">${document.getElementById('storePersonPhone').value}</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-slate-500 text-sm w-36">Store Name:</span>
-                                <span class="font-semibold text-slate-800">${storeName}</span>
-                            </div>
-                            <div class="flex items-start gap-3">
-                                <span class="text-slate-500 text-sm w-36">Delivery Address:</span>
-                                <span class="font-semibold text-slate-800 flex-1">${document.getElementById('deliveryAddress').value}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Table -->
-                    <div class="bg-white rounded-xl overflow-hidden shadow-lg mb-8">
-                        <table class="w-full">
-                            <thead class="bg-gradient-to-r from-slate-700 to-slate-800 text-white">
-                                <tr>
-                                    <th class="px-4 py-4 text-left text-sm font-semibold">${columnHeaders.slNo}</th>
-                                    <th class="px-4 py-4 text-left text-sm font-semibold">${columnHeaders.code}</th>
-                                    <th class="px-4 py-4 text-left text-sm font-semibold">${columnHeaders.productsName}</th>
-                                    <th class="px-4 py-4 text-right text-sm font-semibold">${columnHeaders.cpu}</th>
-                                    <th class="px-4 py-4 text-right text-sm font-semibold">${columnHeaders.poQty}</th>
-                                    <th class="px-4 py-4 text-right text-sm font-semibold">${columnHeaders.poValue}</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-slate-700">
-                                ${tableRows}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Total Box -->
-                    <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-6 text-center mb-8 shadow-lg">
-                        <p class="text-emerald-100 text-sm mb-1">Total Purchase Order Value</p>
-                        <p class="text-white text-3xl font-bold">${total.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-
-                    <!-- Signature Section -->
-                    <div class="flex justify-between items-end mb-10">
-                        <div>
-                            <p class="font-semibold text-slate-700 mb-3">Authorized Signature:</p>
-                            ${signatureData ? `<img src="${signatureData}" class="h-16 mb-2">` : '<div class="w-48 h-16 mb-2"></div>'}
-                            <div class="w-48 border-t-2 border-slate-400"></div>
-                        </div>
-                        <div class="text-right text-slate-500 text-sm">
-                            <p>Date: ${new Date().toLocaleDateString()}</p>
-                        </div>
-                    </div>
-
-                    <!-- Contact Info Footer -->
-                    <div class="border-t-2 border-slate-300 pt-5">
-                        <p class="font-bold text-slate-700 mb-1">For questions concerning this invoice, please contact</p>
-                        <p class="text-slate-600">Name: ${document.getElementById('contactName').value}, Phone: ${document.getElementById('contactPhone').value}, Email Address: ${document.getElementById('contactEmail').value}</p>
+    document.getElementById('pdfPreviewContent').innerHTML = `
+        <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden border border-slate-200">
+            <div class="h-1 bg-slate-800"></div>
+            <div class="p-6">
+                ${logoData ? `<div class="flex justify-center mb-4"><img src="${logoData}" style="max-height:48px;max-width:130px;" class="object-contain"></div>` : ''}
+                <div class="text-center mb-5">
+                    <h1 class="text-base font-bold text-slate-800 tracking-widest uppercase">Purchase Order</h1>
+                    <div class="w-14 h-0.5 bg-slate-700 mx-auto mt-1.5"></div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-4 mb-5 grid grid-cols-2 gap-x-8 gap-y-2 border border-slate-100">
+                    <div class="flex gap-2"><span class="text-slate-400 text-xs w-20 shrink-0">PO Date:</span><span class="font-semibold text-slate-800 text-xs">${poDate}</span></div>
+                    <div class="flex gap-2"><span class="text-slate-400 text-xs w-20 shrink-0">Store:</span><span class="font-semibold text-slate-800 text-xs">${escHtml(storeName)}</span></div>
+                    <div class="flex gap-2"><span class="text-slate-400 text-xs w-20 shrink-0">Ref No:</span><span class="font-semibold text-slate-800 text-xs">${escHtml(refNo)}</span></div>
+                    <div class="flex gap-2"><span class="text-slate-400 text-xs w-20 shrink-0">Person:</span><span class="font-semibold text-slate-800 text-xs">${escHtml(document.getElementById('storePersonName').value)}</span></div>
+                    <div class="flex gap-2"><span class="text-slate-400 text-xs w-20 shrink-0">Del. Date:</span><span class="font-semibold text-slate-800 text-xs">${delDate}</span></div>
+                    <div class="flex gap-2"><span class="text-slate-400 text-xs w-20 shrink-0">Phone:</span><span class="font-semibold text-slate-800 text-xs">${escHtml(document.getElementById('storePersonPhone').value)}</span></div>
+                    <div class="flex gap-2"><span class="text-slate-400 text-xs w-20 shrink-0">Vendor:</span><span class="font-semibold text-slate-800 text-xs">${escHtml(vendorName)}</span></div>
+                    <!-- FIX: full address shown in preview -->
+                    <div class="flex gap-2 col-span-2 border-t border-slate-100 pt-2 mt-1">
+                        <span class="text-slate-400 text-xs w-20 shrink-0">Del. Address:</span>
+                        <span class="font-semibold text-slate-800 text-xs leading-relaxed">${escHtml(addr)}</span>
                     </div>
                 </div>
-            `;
+                <div class="overflow-hidden rounded-xl border border-slate-200 mb-5">
+                    <table class="w-full">
+                        <thead><tr class="bg-slate-800 text-white">
+                            <th class="px-3 py-2.5 text-center text-xs font-semibold">${columnHeaders.slNo}</th>
+                            <th class="px-3 py-2.5 text-left text-xs font-semibold">${columnHeaders.code}</th>
+                            <th class="px-3 py-2.5 text-left text-xs font-semibold">${columnHeaders.productsName}</th>
+                            <th class="px-3 py-2.5 text-right text-xs font-semibold">${columnHeaders.cpu}</th>
+                            <th class="px-3 py-2.5 text-right text-xs font-semibold">${columnHeaders.poQty}</th>
+                            <th class="px-3 py-2.5 text-right text-xs font-semibold">${columnHeaders.poValue}</th>
+                        </tr></thead>
+                        <tbody class="divide-y divide-slate-100">${rows}</tbody>
+                        <tfoot><tr class="bg-slate-50">
+                            <td colspan="4" class="px-3 py-2 text-xs text-slate-500">${filteredData.length} item(s) &nbsp;|&nbsp; Total Qty: ${totalQty}</td>
+                            <td colspan="2" class="px-3 py-2 text-right text-xs font-bold text-slate-800">${total.toFixed(2)}</td>
+                        </tr></tfoot>
+                    </table>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-3 text-center mb-5">
+                    <p class="text-slate-400 text-xs">Total Purchase Order Value</p>
+                    <p class="text-white text-xl font-bold mt-0.5">${total.toLocaleString('en-BD',{minimumFractionDigits:2,maximumFractionDigits:2})}</p>
+                </div>
+                <div class="flex justify-between items-end mb-5">
+                    <div>
+                        <p class="font-semibold text-slate-700 text-xs mb-1.5">Authorized Signature:</p>
+                        ${signatureData ? `<img src="${signatureData}" style="max-height:28px;max-width:72px;" class="object-contain mb-1.5">` : '<div class="h-7 mb-1.5"></div>'}
+                        <div class="w-28 border-t border-slate-300"></div>
+                        <p class="text-slate-400 text-xs mt-1">Authorized Signature</p>
+                    </div>
+                    <p class="text-slate-400 text-xs">Date: ${new Date().toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric'})}</p>
+                </div>
+                <div class="border-t border-slate-100 pt-3 -mx-6 -mb-6 px-6 py-3 bg-slate-50">
+                    <p class="font-semibold text-slate-600 text-xs mb-0.5">For queries, contact:</p>
+                    <p class="text-slate-500 text-xs">${escHtml(document.getElementById('contactName').value)} &nbsp;|&nbsp; ${escHtml(document.getElementById('contactPhone').value)} &nbsp;|&nbsp; ${escHtml(document.getElementById('contactEmail').value)}</p>
+                </div>
+            </div>
+            <div class="h-1 bg-slate-800"></div>
+        </div>`;
+    document.getElementById('pdfModal').classList.remove('hidden');
+}
 
-            document.getElementById('pdfModal').classList.remove('hidden');
+/* ================================================
+   DOWNLOAD SINGLE PDF
+   FIX: filename = REF_STORE_VENDOR_MONTH
+   ================================================ */
+function downloadPDF() {
+    const vendorName = document.getElementById('vendorFilter').value || 'All Vendors';
+    const storeName  = document.getElementById('mainStoreName').value || document.getElementById('storeFilter').value || 'Store';
+    const refNo = document.getElementById('referenceNo').value || generateRefNo();
+    const doc = buildPDFDoc(filteredData, { vendorName, storeName });
+    // FIX: REF_STORE_VENDOR_MONTH format
+    doc.save(buildFileName(refNo, storeName, vendorName) + '.pdf');
+    showNotification('PDF downloaded!','success');
+}
+
+function closeModal() { document.getElementById('pdfModal').classList.add('hidden'); }
+
+/* ================================================
+   ZIP DOWNLOAD
+   ================================================ */
+function openZipModal() {
+    if (!allData.length) { showNotification('Add items before creating ZIP','error'); return; }
+    const stores = [...new Set(allData.map(i=>i.storeName).filter(s=>s&&s.trim()))];
+    if (!stores.length) { showNotification('Assign stores to items first','error'); return; }
+
+    const listEl = document.getElementById('zipStoreList');
+    listEl.innerHTML = stores.map(store=>{
+        const vendors = [...new Set(allData.filter(i=>i.storeName===store).map(i=>i.vendorName).filter(v=>v))];
+        const count = allData.filter(i=>i.storeName===store).length;
+        return `<label class="flex items-start gap-2.5 p-3 bg-slate-50 rounded-xl border-2 border-transparent cursor-pointer hover:border-blue-300 transition-all">
+            <input type="checkbox" value="${store}" checked class="zip-store-check mt-0.5 w-4 h-4 accent-blue-600 rounded">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-semibold text-slate-800 text-sm truncate">${store}</span>
+                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">${count} items</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5 truncate">${vendors.length} vendor(s): ${vendors.join(', ')}</p>
+            </div>
+        </label>`;
+    }).join('');
+
+    const refNo = document.getElementById('referenceNo').value || generateRefNo();
+    document.getElementById('zipFileName').value = `PO_ZIP_${refNo}_${monthAbbr(new Date())}`;
+    document.getElementById('zipProgressContainer').classList.add('hidden');
+    document.getElementById('zipProgressBar').style.width = '0%';
+    document.getElementById('zipProgressPercent').textContent = '0%';
+    document.getElementById('zipModal').classList.remove('hidden');
+}
+
+function closeZipModal() { document.getElementById('zipModal').classList.add('hidden'); }
+
+async function downloadZip() {
+    const selectedStores = [...document.querySelectorAll('.zip-store-check:checked')].map(el=>el.value);
+    if (!selectedStores.length) { showNotification('Select at least one store','error'); return; }
+
+    const zipFileName = document.getElementById('zipFileName').value.trim() || 'PO_Bundle';
+    const btn = document.getElementById('zipDownloadBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Generating...`;
+
+    const progressContainer = document.getElementById('zipProgressContainer');
+    const progressBar = document.getElementById('zipProgressBar');
+    const progressPercent = document.getElementById('zipProgressPercent');
+    const progressLabel = document.getElementById('zipProgressLabel');
+    progressContainer.classList.remove('hidden');
+
+    const zip = new JSZip();
+    const refNo = document.getElementById('referenceNo').value || generateRefNo();
+
+    let totalTasks = 0;
+    selectedStores.forEach(store=>{
+        const vendors = [...new Set(allData.filter(i=>i.storeName===store).map(i=>i.vendorName).filter(v=>v))];
+        totalTasks += vendors.length + 1;
+    });
+    let done = 0;
+
+    for (const store of selectedStores) {
+        const storeItems = allData.filter(i=>i.storeName===store);
+        const vendors = [...new Set(storeItems.map(i=>i.vendorName).filter(v=>v))];
+        const folderName = store.replace(/[^a-zA-Z0-9_\-]/g,'_');
+        const info = storeDetails[store] || {};
+        const opts = {
+            storeName: store,
+            storePersonName:  info.person  || document.getElementById('storePersonName').value,
+            storePersonPhone: info.phone   || document.getElementById('storePersonPhone').value,
+            deliveryAddress:  info.address || document.getElementById('deliveryAddress').value
+        };
+
+        for (const vendor of vendors) {
+            progressLabel.textContent = `${store} / ${vendor}`;
+            const vitems = storeItems.filter(i=>i.vendorName===vendor).map((r,i)=>({...r,slNo:i+1}));
+            const doc = buildPDFDoc(vitems, {...opts, vendorName:vendor});
+            // FIX: REF_STORE_VENDOR_MONTH filename
+            zip.folder(folderName).file(buildFileName(refNo, store, vendor)+'.pdf', doc.output('arraybuffer'));
+            done++;
+            const pct = Math.round(done/totalTasks*100);
+            progressBar.style.width = pct+'%';
+            progressPercent.textContent = pct+'%';
+            await new Promise(r=>setTimeout(r,15));
         }
 
-        function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            const vendorName = document.getElementById('vendorFilter').value || 'All Vendors';
-            const storeName = document.getElementById('mainStoreName').value || document.getElementById('storeFilter').value || '';
-            
-            // Set background color
-            doc.setFillColor(239, 236, 227);
-            doc.rect(0, 0, 210, 297, 'F');
+        progressLabel.textContent = `${store} — all vendors combined`;
+        const allStoreItems = storeItems.map((r,i)=>({...r,slNo:i+1}));
+        const cDoc = buildPDFDoc(allStoreItems, {...opts, vendorName:'All Vendors'});
+        zip.folder(folderName).file(buildFileName(refNo, store, 'ALL_VENDORS')+'.pdf', cDoc.output('arraybuffer'));
+        done++;
+        progressBar.style.width = Math.round(done/totalTasks*100)+'%';
+        progressPercent.textContent = Math.round(done/totalTasks*100)+'%';
+        await new Promise(r=>setTimeout(r,15));
+    }
 
-            let yPos = 15;
+    progressLabel.textContent = 'Compressing...';
+    const content = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{ level:6 } });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href=url; a.download=zipFileName+'.zip';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
-            // Logo
-            if (logoData) {
-                try {
-                    doc.addImage(logoData, 'PNG', 75, yPos, 60, 30);
-                    yPos += 35;
-                } catch(e) {
-                    console.log('Logo error:', e);
-                }
-            }
+    btn.disabled = false;
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> Download ZIP`;
+    progressBar.style.width='100%';
+    progressPercent.textContent='100%';
+    showNotification(`ZIP ready! ${done} PDF(s) created.`,'success');
+    setTimeout(()=>closeZipModal(), 1600);
+}
 
-            // Title
-            doc.setFontSize(24);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(30, 41, 59);
-            doc.text('PURCHASE ORDER', 105, yPos, { align: 'center' });
-            
-            // Underline
-            doc.setDrawColor(102, 126, 234);
-            doc.setLineWidth(1);
-            doc.line(80, yPos + 3, 130, yPos + 3);
-            yPos += 18;
+/* ================================================
+   TEMPLATE
+   ================================================ */
+function downloadTemplate() {
+    const ws_data = [
+        ['Sl No','Vendor Name','Code','Products Name','CPU','PO Qty','Store Name'],
+        [1,'Sample Vendor','PROD001','Sample Product',100,10,'NORP KNIT'],
+        [2,'Sample Vendor 2','PROD002','Another Product',200,5,'ESL']
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'PO Template');
+    XLSX.writeFile(wb, 'PO_Template.xlsx');
+    showNotification('Template downloaded!','success');
+}
 
-            // Details Section
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100, 116, 139);
-            
-            const leftDetails = [
-                ['PO Date:', document.getElementById('poDate').value],
-                ['Reference No:', document.getElementById('referenceNo').value],
-                ['Delivery Date:', document.getElementById('deliveryDate').value],
-                ['Vendor:', vendorName]
-            ];
+/* ================================================
+   CLEAR
+   ================================================ */
+function clearData() {
+    if (!confirm('Clear all data? This cannot be undone.')) return;
+    allData=[]; filteredData=[]; logoData=null; signatureData=null;
+    columnHeaders = { slNo:'Sl No', vendorName:'Vendor Name', code:'Code', productsName:'Products Name', cpu:'CPU', poQty:'PO Qty', storeName:'Store', poValue:'PO Value' };
+    localStorage.removeItem('poToolData');
+    renderTableHeaders(); renderTable(); calculateTotal();
+    ['totalPOValue','totalItems','totalQty'].forEach(id=>document.getElementById(id).textContent=id==='totalPOValue'?'0.00':'0');
+    document.getElementById('itemCount').textContent='0 Items';
+    document.getElementById('vendorFilter').innerHTML='<option value="">All Vendors</option>';
+    document.getElementById('storeFilter').innerHTML='<option value="">All Stores</option>';
+    document.getElementById('logoPreview').classList.add('hidden');
+    document.getElementById('signaturePreview').classList.add('hidden');
+    ['referenceNo','deliveryAddress','storePersonName','storePersonPhone','mainStoreName','logoFile','signatureFile'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('logoUrlInput').value='https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk';
+    document.getElementById('poDate').value=todayStr();
+    document.getElementById('deliveryDate').value=plusDaysStr(7);
+    generateRefNo();
+    showNotification('All data cleared','info');
+}
 
-            const rightDetails = [
-                ['Store Person:', document.getElementById('storePersonName').value],
-                ['Store Phone:', document.getElementById('storePersonPhone').value],
-                ['Store Name:', storeName],
-                ['Delivery Address:', document.getElementById('deliveryAddress').value]
-            ];
+/* ================================================
+   STORAGE
+   ================================================ */
+function saveToStorage() {
+    try {
+        const data = {
+            allData, filteredData, logoData, signatureData, columnHeaders,
+            referenceNo: document.getElementById('referenceNo').value,
+            mainStoreName: document.getElementById('mainStoreName').value,
+            deliveryAddress: document.getElementById('deliveryAddress').value,
+            storePersonName: document.getElementById('storePersonName').value,
+            storePersonPhone: document.getElementById('storePersonPhone').value,
+            contactName: document.getElementById('contactName').value,
+            contactPhone: document.getElementById('contactPhone').value,
+            contactEmail: document.getElementById('contactEmail').value,
+            vendorFilter: document.getElementById('vendorFilter').value,
+            storeFilter: document.getElementById('storeFilter').value,
+            logoUrl: document.getElementById('logoUrlInput').value
+        };
+        localStorage.setItem('poToolData', JSON.stringify(data));
+    } catch(e) { console.warn('Storage save failed:', e); }
+}
 
-            leftDetails.forEach((item, i) => {
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(100, 116, 139);
-                doc.text(item[0], 15, yPos + (i * 7));
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(30, 41, 59);
-                doc.text(item[1], 45, yPos + (i * 7));
-            });
-
-            rightDetails.forEach((item, i) => {
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(100, 116, 139);
-                doc.text(item[0], 110, yPos + (i * 7));
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(30, 41, 59);
-                const lines = doc.splitTextToSize(item[1], 55);
-                doc.text(lines, 145, yPos + (i * 7));
-            });
-
-            yPos += 35;
-
-            // Table
-            const tableData = filteredData.map(item => [
-                item.slNo,
-                item.code,
-                item.productsName,
-                item.cpu.toFixed(2),
-                item.poQty,
-                (item.cpu * item.poQty).toFixed(2)
-            ]);
-
-            doc.autoTable({
-                startY: yPos,
-                head: [[columnHeaders.slNo, columnHeaders.code, columnHeaders.productsName, columnHeaders.cpu, columnHeaders.poQty, columnHeaders.poValue]],
-                body: tableData,
-                theme: 'grid',
-                headStyles: { 
-                    fillColor: [51, 65, 85],
-                    textColor: 255,
-                    fontStyle: 'bold',
-                    fontSize: 10
-                },
-                bodyStyles: {
-                    textColor: [51, 65, 85],
-                    fontSize: 9
-                },
-                alternateRowStyles: {
-                    fillColor: [248, 250, 252]
-                },
-                columnStyles: {
-                    0: { halign: 'center', cellWidth: 15 },
-                    3: { halign: 'right' },
-                    4: { halign: 'right' },
-                    5: { halign: 'right', fontStyle: 'bold' }
-                },
-                margin: { left: 15, right: 15 }
-            });
-
-            yPos = doc.lastAutoTable.finalY + 10;
-
-            // Total Box
-            const total = filteredData.reduce((sum, item) => sum + (item.cpu * item.poQty), 0);
-            doc.setFillColor(16, 185, 129);
-            doc.roundedRect(55, yPos, 100, 18, 3, 3, 'F');
-            
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(255, 255, 255);
-            doc.text('Total Purchase Order Value', 105, yPos + 6, { align: 'center' });
-            
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text(total.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 105, yPos + 14, { align: 'center' });
-
-            yPos += 30;
-
-            // Signature
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(51, 65, 85);
-            doc.text('Authorized Signature:', 15, yPos);
-            
-            if (signatureData) {
-                try {
-                    doc.addImage(signatureData, 'PNG', 15, yPos + 3, 45, 22);
-                    yPos += 28;
-                } catch(e) {
-                    console.log('Signature error:', e);
-                    yPos += 25;
-                }
-            } else {
-                yPos += 25;
-            }
-            
-            doc.setDrawColor(148, 163, 184);
-            doc.setLineWidth(0.5);
-            doc.line(15, yPos, 65, yPos);
-
-            // Contact Info Footer
-            yPos = 268;
-            doc.setDrawColor(203, 213, 225);
-            doc.setLineWidth(0.5);
-            doc.line(15, yPos, 195, yPos);
-            yPos += 7;
-            
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(51, 65, 85);
-            doc.text('For questions concerning this invoice, please contact', 15, yPos);
-            yPos += 5;
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(100, 116, 139);
-            doc.text(`Name: ${document.getElementById('contactName').value}, Phone: ${document.getElementById('contactPhone').value}, Email Address: ${document.getElementById('contactEmail').value}`, 15, yPos);
-
-            const fileName = `PO_${document.getElementById('referenceNo').value || 'Order'}_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(fileName);
-            showNotification('PDF downloaded successfully!', 'success');
+function loadFromStorage() {
+    try {
+        const saved = localStorage.getItem('poToolData');
+        if (!saved) return;
+        const data = JSON.parse(saved);
+        allData = data.allData||[]; filteredData = data.filteredData||[];
+        logoData = data.logoData; signatureData = data.signatureData;
+        if (data.columnHeaders) columnHeaders = data.columnHeaders;
+        const fields = ['referenceNo','mainStoreName','deliveryAddress','storePersonName','storePersonPhone','contactName','contactPhone','contactEmail'];
+        fields.forEach(f=>{ const el=document.getElementById(f); if(el&&data[f]) el.value=data[f]; });
+        if (data.logoUrl) document.getElementById('logoUrlInput').value = data.logoUrl;
+        // NOTE: poDate and deliveryDate always set to current/+7 — not restored from storage
+        if (logoData) { document.getElementById('logoImg').src=logoData; document.getElementById('logoPreview').classList.remove('hidden'); }
+        if (signatureData) { document.getElementById('signatureImg').src=signatureData; document.getElementById('signaturePreview').classList.remove('hidden'); }
+        if (allData.length) {
+            populateFilters();
+            if (data.vendorFilter) document.getElementById('vendorFilter').value=data.vendorFilter;
+            if (data.storeFilter) document.getElementById('storeFilter').value=data.storeFilter;
+            renderTableHeaders(); renderTable(); calculateTotal();
         }
+    } catch(e) { console.warn('Storage load failed:', e); }
+}
 
-        function closeModal() {
-            document.getElementById('pdfModal').classList.add('hidden');
-        }
+/* ================================================
+   EVENTS
+   ================================================ */
+document.querySelectorAll('input:not([type=file]), select, textarea').forEach(el=>{
+    el.addEventListener('change', saveToStorage);
+});
+document.addEventListener('keydown', e=>{
+    if (e.key==='Escape') { closeModal(); closeZipModal(); }
+});
+document.getElementById('pdfModal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('zipModal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeZipModal(); });
 
-        function downloadTemplate() {
-            const ws_data = [
-                ['Sl No', 'Vendor Name', 'Code', 'Products Name', 'CPU', 'PO Qty', 'Store Name'],
-                [1, 'Sample Vendor', 'PROD001', 'Sample Product', 100, 10, 'NORP KNIT'],
-                [2, 'Sample Vendor', 'PROD002', 'Another Product', 200, 5, 'ESL']
-            ];
-            
-            const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'PO Template');
-            XLSX.writeFile(wb, 'PO_Template.xlsx');
-            showNotification('Template downloaded successfully!', 'success');
-        }
-
-        function clearData() {
-            // Simple confirmation without security code
-            if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
-                allData = [];
-                filteredData = [];
-                logoData = null;
-                signatureData = null;
-                columnHeaders = {
-                    'slNo': 'Sl No',
-                    'vendorName': 'Vendor Name',
-                    'code': 'Code',
-                    'productsName': 'Products Name',
-                    'cpu': 'CPU',
-                    'poQty': 'PO Qty',
-                    'storeName': 'Store',
-                    'poValue': 'PO Value'
-                };
-                localStorage.removeItem('poToolData');
-                
-                renderTableHeaders();
-                renderTable();
-                calculateTotal();
-                
-                document.getElementById('totalPOValue').textContent = '0.00';
-                document.getElementById('totalItems').textContent = '0';
-                document.getElementById('totalQty').textContent = '0';
-                document.getElementById('itemCount').textContent = '0 Items';
-                document.getElementById('vendorFilter').innerHTML = '<option value="">All Vendors</option>';
-                document.getElementById('storeFilter').innerHTML = '<option value="">All Stores</option>';
-                document.getElementById('logoPreview').classList.add('hidden');
-                document.getElementById('signaturePreview').classList.add('hidden');
-                document.getElementById('referenceNo').value = '';
-                document.getElementById('deliveryAddress').value = '';
-                document.getElementById('storePersonName').value = '';
-                document.getElementById('storePersonPhone').value = '';
-                document.getElementById('mainStoreName').value = '';
-                document.getElementById('logoFile').value = '';
-                document.getElementById('signatureFile').value = '';
-                document.getElementById('logoUrlInput').value = 'https://drive.google.com/uc?export=view&id=1mUuMtxmAIHo8Mv3icxqO_LZ80BLv_Ahk';
-                
-                showNotification('All data cleared successfully!', 'success');
-            }
-        }
-
-        function saveToStorage() {
-            const data = {
-                allData,
-                filteredData,
-                logoData,
-                signatureData,
-                columnHeaders,
-                poDate: document.getElementById('poDate').value,
-                deliveryDate: document.getElementById('deliveryDate').value,
-                referenceNo: document.getElementById('referenceNo').value,
-                mainStoreName: document.getElementById('mainStoreName').value,
-                deliveryAddress: document.getElementById('deliveryAddress').value,
-                storePersonName: document.getElementById('storePersonName').value,
-                storePersonPhone: document.getElementById('storePersonPhone').value,
-                contactName: document.getElementById('contactName').value,
-                contactPhone: document.getElementById('contactPhone').value,
-                contactEmail: document.getElementById('contactEmail').value,
-                vendorFilter: document.getElementById('vendorFilter').value,
-                storeFilter: document.getElementById('storeFilter').value,
-                logoUrl: document.getElementById('logoUrlInput').value
-            };
-            localStorage.setItem('poToolData', JSON.stringify(data));
-        }
-
-        function loadFromStorage() {
-            const saved = localStorage.getItem('poToolData');
-            if (saved) {
-                const data = JSON.parse(saved);
-                allData = data.allData || [];
-                filteredData = data.filteredData || [];
-                logoData = data.logoData;
-                signatureData = data.signatureData;
-                columnHeaders = data.columnHeaders || {
-                    'slNo': 'Sl No',
-                    'vendorName': 'Vendor Name',
-                    'code': 'Code',
-                    'productsName': 'Products Name',
-                    'cpu': 'CPU',
-                    'poQty': 'PO Qty',
-                    'storeName': 'Store',
-                    'poValue': 'PO Value'
-                };
-
-                if (data.poDate) document.getElementById('poDate').value = data.poDate;
-                if (data.deliveryDate) document.getElementById('deliveryDate').value = data.deliveryDate;
-                if (data.referenceNo) document.getElementById('referenceNo').value = data.referenceNo;
-                if (data.mainStoreName) document.getElementById('mainStoreName').value = data.mainStoreName;
-                if (data.deliveryAddress) document.getElementById('deliveryAddress').value = data.deliveryAddress;
-                if (data.storePersonName) document.getElementById('storePersonName').value = data.storePersonName;
-                if (data.storePersonPhone) document.getElementById('storePersonPhone').value = data.storePersonPhone;
-                if (data.contactName) document.getElementById('contactName').value = data.contactName;
-                if (data.contactPhone) document.getElementById('contactPhone').value = data.contactPhone;
-                if (data.contactEmail) document.getElementById('contactEmail').value = data.contactEmail;
-                if (data.logoUrl) document.getElementById('logoUrlInput').value = data.logoUrl;
-
-                if (logoData) {
-                    document.getElementById('logoImg').src = logoData;
-                    document.getElementById('logoPreview').classList.remove('hidden');
-                }
-                if (signatureData) {
-                    document.getElementById('signatureImg').src = signatureData;
-                    document.getElementById('signaturePreview').classList.remove('hidden');
-                }
-
-                if (allData.length > 0) {
-                    populateFilters();
-                    if (data.vendorFilter) document.getElementById('vendorFilter').value = data.vendorFilter;
-                    if (data.storeFilter) document.getElementById('storeFilter').value = data.storeFilter;
-                    renderTableHeaders();
-                    renderTable();
-                    calculateTotal();
-                }
-            }
-        }
-
-        // Add input listeners for auto-save
-        document.querySelectorAll('input, select, textarea').forEach(el => {
-            el.addEventListener('change', saveToStorage);
-        });
-
-        // Close modal on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
-        });
-
-        // Close modal on backdrop click
-        document.getElementById('pdfModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-
-        // Print PDF function
-        function printPDF() {
-            const printContent = document.getElementById('pdfPreviewContent').innerHTML;
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Purchase Order - Print</title>
-                    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"><\/script>
-                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-                    <style>
-                        * { font-family: 'Inter', sans-serif; }
-                        .bg-po { background-color: #EFECE3; }
-                        @media print {
-                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                            .bg-po { background-color: #EFECE3 !important; }
-                        }
-                        body { margin: 0; padding: 20px; }
-                    </style>
-                </head>
-                <body>
-                    ${printContent}
-                    <script>
-                        setTimeout(function() {
-                            window.print();
-                            window.close();
-                        }, 500);
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            showNotification('PDF sent to printer!', 'success');
-        }
-    </script>
+/* ================================================
+   PRINT
+   ================================================ */
+function printPDF() {
+    const content = document.getElementById('pdfPreviewContent').innerHTML;
+    const pw = window.open('','_blank');
+    pw.document.write(`<!DOCTYPE html><html><head>
+        <title>Purchase Order</title>
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"><\/script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <style>*{font-family:'Inter',sans-serif} @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}} body{margin:0;padding:16px;background:#f1f5f9}</style>
+    </head><body>${content}<script>setTimeout(()=>{window.print();window.close();},600);<\/script></body></html>`);
+    pw.document.close();
+    showNotification('Sent to printer!','success');
+}
+</script>
 </body>
 </html>
