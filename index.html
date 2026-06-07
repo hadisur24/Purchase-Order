@@ -436,9 +436,9 @@ let editingHeader = null;
    STORE DETAILS
    ================================================ */
 const storeDetails = {
-    'NORP KNIT':{ address:'Norp Knit Industries Ltd. Unit 02, Shi-152/2, Islampur, Kodda, Nandun, Bason, Gazipur-1700, Bangladesh', person:'Afridi', phone:'+8801936711532' },
+    'NORP KNIT':{ address:'Norp Knit Industries Ltd. Unit 02, Shi-152/2, Islampur, Kodda, Nandun, Bason, Gazipur-1700, Bangladesh', person:'Pritom', phone:'+8801614149002' },
     'ESL':       { address:'SHOP-2 Everbright Sweaters Ltd., Kathgora - Mridhabari Rd, Zirabo 1341', person:'Razib', phone:'+8801338358393' },
-    'ICCL':      { address:'SHOP-3 International Classic Composite Ltd. Naojur, Kodda, Joydebpur, Gazipur', person:'Pritom', phone:'+8801614149002' },
+    'ICCL':      { address:'SHOP-3 International Classic Composite Ltd. Naojur, Kodda, Joydebpur, Gazipur', person:'Mobarok', phone:'+8801994738942' },
     'HA-MEEM':   { address:'SHOP-4 Ha-Meem (Creative Collections Ltd.) 69 & 107, Mil Gate, Iztema Gate, Nishat Nagar, Tongi', person:'Sourav', phone:'+8801620220106' },
     'RUPSHI':    { address:'SHOP-5 Rupshi Complex, City Economic Zone, Rupshi, Rupganj, Narayanganj', person:'Riazul Islam', phone:'+8801621083113' },
     'GBAL':      { address:'SHOP-6 Good Bags & Accessories Ltd., Jadurchar Rd, Hemayetpur, Savar, Dhaka', person:'Sajib', phone:'+8801797258811' },
@@ -477,12 +477,12 @@ function generateRefNo() {
     return ref;
 }
 
-/* FIX: File name format — REF_STORE_VENDOR_MONTH */
+/* File name format — VENDOR_STORE_MONTH_REF */
 function buildFileName(refNo, storeName, vendorName) {
     const now = new Date();
     const month = monthAbbr(now);
     const safe = s => (s||'UNKNOWN').replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
-    return `${safe(refNo)}_${safe(storeName)}_${safe(vendorName)}_${month}`;
+    return `${safe(vendorName)}_${safe(storeName)}_${month}_${safe(refNo)}`;
 }
 
 /* ================================================
