@@ -437,7 +437,7 @@ let editingHeader = null;
    ================================================ */
 const storeDetails = {
     'NORP KNIT':{ address:'Norp Knit Industries Ltd. Unit 02, Shi-152/2, Islampur, Kodda, Nandun, Bason, Gazipur-1700, Bangladesh', person:'Afridi', phone:'+8801936711532' },
-    'ESL':       { address:'SHOP-2 Everbright Sweaters Ltd., Kathgora - Mridhabari Rd, Zirabo 1341', person:'Razib', phone:'+8801338358393' },
+    'ESL':       { address:'SHOP-2 Everbright Sweaters Ltd., Kathgora - Mridhabari Rd, Zirabo 1341', person:'Nur Mohammad', phone:'+8801795919961' },
     'ICCL':      { address:'SHOP-3 International Classic Composite Ltd. Naojur, Kodda, Joydebpur, Gazipur', person:'Pritom', phone:'+8801614149002' },
     'HA-MEEM':   { address:'SHOP-4 Ha-Meem (Creative Collections Ltd.) 69 & 107, Mil Gate, Iztema Gate, Nishat Nagar, Tongi', person:'Sourav', phone:'+8801620220106' },
     'RUPSHI':    { address:'SHOP-5 Rupshi Complex, City Economic Zone, Rupshi, Rupganj, Narayanganj', person:'Riazul Islam', phone:'+8801621083113' },
@@ -461,20 +461,32 @@ function monthAbbr(date) {
     return months[date.getMonth()];
 }
 
-/* FIX: Auto-generate ref no — sequential counter per day */
+/* Auto-generate ref no: peek only, does NOT increment */
 function generateRefNo() {
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth()+1).padStart(2,'0');
     const d = String(now.getDate()).padStart(2,'0');
     const dateKey = `${y}${m}${d}`;
-    // Get/increment daily counter from localStorage
-    let counter = parseInt(localStorage.getItem('poRefCounter_'+dateKey)||'0') + 1;
-    localStorage.setItem('poRefCounter_'+dateKey, String(counter));
+    const counter = parseInt(localStorage.getItem('poRefCounter_'+dateKey)||'0') + 1;
     const ref = `PO-${dateKey}-${String(counter).padStart(3,'0')}`;
     document.getElementById('referenceNo').value = ref;
     saveToStorage();
     return ref;
+}
+
+/* Called after a PO is downloaded — commits counter and preps next ref */
+function bumpRefNo() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const dateKey = `${y}${m}${d}`;
+    const usedCounter = parseInt(localStorage.getItem('poRefCounter_'+dateKey)||'0') + 1;
+    localStorage.setItem('poRefCounter_'+dateKey, String(usedCounter));
+    const nextRef = `PO-${dateKey}-${String(usedCounter+1).padStart(3,'0')}`;
+    document.getElementById('referenceNo').value = nextRef;
+    saveToStorage();
 }
 
 /* File name format — VENDOR_STORE_MONTH_REF */
@@ -628,7 +640,97 @@ function processExcel(event) {
 function processPDF(event) {
     const file = event.target.files[0];
     if (!file) return;
-    showNotification('PDF uploaded: '+file.name,'info');
+    showNotification('Reading PDF: ' + file.name + ' ...', 'info');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const text = extractTextFromPDF(e.target.result);
+            const parsed = parsePOFromText(text);
+            if (parsed.items && parsed.items.length > 0) {
+                // Populate form fields if found
+                if (parsed.refNo)       document.getElementById('referenceNo').value   = parsed.refNo;
+                if (parsed.storeName)   document.getElementById('mainStoreName').value  = parsed.storeName;
+                if (parsed.spName)      document.getElementById('storePersonName').value = parsed.spName;
+                if (parsed.spPhone)     document.getElementById('storePersonPhone').value = parsed.spPhone;
+                if (parsed.delivAddr)   document.getElementById('deliveryAddress').value = parsed.delivAddr;
+                // Load items into table
+                allData = parsed.items;
+                filteredData = [...allData];
+                populateFilters(); renderTable(); calculateTotal(); saveToStorage();
+                showNotification(`PDF imported! ${parsed.items.length} item(s) loaded.`, 'success');
+            } else {
+                showNotification('PDF uploaded. No table data found — fill in items manually.', 'info');
+            }
+        } catch(err) {
+            console.warn('PDF parse error:', err);
+            showNotification('PDF uploaded: ' + file.name + ' (manual entry mode)', 'info');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+/* Extract raw text from PDF bytes using simple text stream parsing */
+function extractTextFromPDF(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let str = '';
+    for (let i = 0; i < bytes.length; i++) {
+        const c = bytes[i];
+        if (c >= 32 && c < 127) str += String.fromCharCode(c);
+        else if (c === 10 || c === 13) str += '\n';
+    }
+    // Extract text between BT/ET blocks (PDF text objects)
+    const chunks = [];
+    const btRe = /BT[\s\S]*?ET/g;
+    let m;
+    while ((m = btRe.exec(str)) !== null) {
+        // Get strings inside () or <>
+        const tjRe = /\(([^)]{0,200})\)|<([0-9A-Fa-f]{2,})>/g;
+        let tm;
+        while ((tm = tjRe.exec(m[0])) !== null) {
+            if (tm[1]) chunks.push(tm[1].replace(/\\n/g,'\n').replace(/\\/g,''));
+            else if (tm[2]) {
+                // hex decode
+                let hex = tm[2];
+                let decoded = '';
+                for (let j = 0; j < hex.length; j += 2) decoded += String.fromCharCode(parseInt(hex.substr(j,2),16));
+                chunks.push(decoded);
+            }
+        }
+    }
+    return chunks.join(' ');
+}
+
+/* Try to parse PO fields and items from extracted text */
+function parsePOFromText(text) {
+    const result = { items:[], refNo:'', storeName:'', spName:'', spPhone:'', delivAddr:'' };
+    // Clean text
+    const t = text.replace(/\s+/g,' ').trim();
+
+    // Extract ref no
+    const refM = t.match(/(?:Ref\s*No[:\s]+|PO[-\s]?)([A-Z0-9\-]{6,20})/i);
+    if (refM) result.refNo = refM[1].trim();
+
+    // Extract phone
+    const phoneM = t.match(/(\+?880\d{10}|\+?\d{10,13})/);
+    if (phoneM) result.spPhone = phoneM[1];
+
+    // Look for rows that match: number, text, text, number, number, number (table pattern)
+    // Try to find lines that look like product rows: code + name + price + qty + value
+    const lineRe = /([A-Z0-9\-]{3,20})\s+([A-Za-z][\w\s,\.\-]{3,50}?)\s+(\d+\.\d{2})\s+(\d+)\s+(\d+\.\d{2})/g;
+    let lm; let slNo = 1;
+    while ((lm = lineRe.exec(t)) !== null) {
+        result.items.push({
+            slNo: slNo++,
+            code: lm[1].trim(),
+            productsName: lm[2].trim(),
+            vendorName: '',
+            cpu: parseFloat(lm[3]),
+            poQty: parseFloat(lm[4]),
+            storeName: ''
+        });
+    }
+
+    return result;
 }
 function uploadLogo(event) {
     const file = event.target.files[0];
@@ -1167,11 +1269,13 @@ function generatePDF() {
 function downloadPDF() {
     const vendorName = document.getElementById('vendorFilter').value || 'All Vendors';
     const storeName  = document.getElementById('mainStoreName').value || document.getElementById('storeFilter').value || 'Store';
+    // Use the current ref no shown in the UI for this PDF
     const refNo = document.getElementById('referenceNo').value || generateRefNo();
     const doc = buildPDFDoc(filteredData, { vendorName, storeName });
-    // FIX: REF_STORE_VENDOR_MONTH format
     doc.save(buildFileName(refNo, storeName, vendorName) + '.pdf');
     showNotification('PDF downloaded!','success');
+    // Increment ref no so the next PO gets a fresh number
+    bumpRefNo();
 }
 
 function closeModal() { document.getElementById('pdfModal').classList.add('hidden'); }
@@ -1231,7 +1335,7 @@ async function downloadZip() {
     let totalTasks = 0;
     selectedStores.forEach(store=>{
         const vendors = [...new Set(allData.filter(i=>i.storeName===store).map(i=>i.vendorName).filter(v=>v))];
-        totalTasks += vendors.length + 1;
+        totalTasks += vendors.length; // only per-vendor PDFs, no combined
     });
     let done = 0;
 
@@ -1260,14 +1364,7 @@ async function downloadZip() {
             await new Promise(r=>setTimeout(r,15));
         }
 
-        progressLabel.textContent = `${store} — all vendors combined`;
-        const allStoreItems = storeItems.map((r,i)=>({...r,slNo:i+1}));
-        const cDoc = buildPDFDoc(allStoreItems, {...opts, vendorName:'All Vendors'});
-        zip.folder(folderName).file(buildFileName(refNo, store, 'ALL_VENDORS')+'.pdf', cDoc.output('arraybuffer'));
-        done++;
-        progressBar.style.width = Math.round(done/totalTasks*100)+'%';
-        progressPercent.textContent = Math.round(done/totalTasks*100)+'%';
-        await new Promise(r=>setTimeout(r,15));
+        // All-vendors combined PDF removed per requirements
     }
 
     progressLabel.textContent = 'Compressing...';
@@ -1283,6 +1380,7 @@ async function downloadZip() {
     progressBar.style.width='100%';
     progressPercent.textContent='100%';
     showNotification(`ZIP ready! ${done} PDF(s) created.`,'success');
+    bumpRefNo(); // Increment ref no after ZIP download
     setTimeout(()=>closeZipModal(), 1600);
 }
 
